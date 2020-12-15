@@ -1,4 +1,4 @@
-create or alter procedure MedicineFactoryLoader
+create or alter procedure Pharmacy.MedicineFactoryLoader
 	as 
 	begin
 	begin try
@@ -41,7 +41,7 @@ exec MedicineFactoryLoader
 ------------------------------------------------------
 ------------------------------------------------------
 
-create or alter procedure MedicineFactoryFirstLoader
+create or alter procedure Pharmacy.MedicineFactoryFirstLoader
 as
 begin
 	begin try 
