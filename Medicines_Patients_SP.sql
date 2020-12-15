@@ -11,6 +11,8 @@ AS
 BEGIN
 	BEGIN TRY
 		TRUNCATE TABLE HospitalDW.dbo.Patients;
+		--DELETE FROM HospitalDW.Pharmacy.Medicines;
+		--DBCC CHECKIDENT ('HospitalDW.Pharmacy.Medicines', RESEED, 0);
 		INSERT INTO HospitalDW.dbo.Patients 
 			SELECT [patient_ID],
 						[national_code],
@@ -89,15 +91,20 @@ CREATE OR ALTER PROCEDURE Pharmacy.uspDimMedicinesFirstLoad
 AS 
 BEGIN
 	BEGIN TRY
+		TRUNCATE TABLE HospitalDW.Pharmacy.Medicines;
+		--DELETE FROM HospitalDW.Pharmacy.Medicines;
+		--DBCC CHECKIDENT ('HospitalDW.Pharmacy.Medicines', RESEED, 0);
 		INSERT INTO HospitalDW.Pharmacy.Medicines
 			SELECT [medicine_ID]
-						,[medicineFactory_ID]
 						,[name]
 						,[latin_name]
 						,[dose]
 						,[side_effects]
 						,[price]
-						,[description] 
+						,[description]
+						,GETDATE()
+						,NULL
+						,1
 			FROM HospitalSA.dbo.Medicines;
 		INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [text], [affected_rows])
 		VALUES (GETDATE(), 'Pharmacy.Medicines', 1, 'First Load was Successful', @@ROWCOUNT);
@@ -114,23 +121,22 @@ CREATE OR ALTER PROCEDURE Pharmacy.uspDimMedicines
 AS 
 BEGIN
 	BEGIN TRY
-		INSERT INTO HospitalDW.Pharmacy.Medicines
-		SELECT [medicine_ID]
-					,[medicineFactory_ID]
-					,[name]
-					,[latin_name]
-					,[dose]
-					,[side_effects]
-					,[price]
-					,[description]
-					,[start_date]
-					,[end_date]
-					,[current_flag]
-		FROM
-		(
-		  MERGE INTO  HospitalDW.Pharmacy.Medicines AS [Target]
+		DECLARE @Tmp TABLE(
+			[medicine_ID] [int] NULL,
+			[name] [varchar](30) NULL,
+			[latin_name] [varchar](75) NULL,
+			[dose] [float] NULL,
+			[side_effects] [varchar](200) NULL,
+			[price] [int] NULL,
+			[description] [varchar](200) NULL,
+			[start_date] [date] NULL,
+			[end_date] [date] NULL,
+			[current_flag] [int] NULL
+		)
+		MERGE INTO @Tmp AS [Target]
 		  USING HospitalSA.dbo.Medicines AS Source
-		  ON  [Target].medicine_ID = Source.medicine_ID
+		  ON  [Target].medicine_ID = Source.medicine_ID 
+		  AND [Target].[current_flag] = 1
 		  WHEN MATCHED AND
 			(
 				[Target].price <> Source. price AND 
@@ -139,47 +145,10 @@ BEGIN
 		  THEN UPDATE SET 
 				end_date = GETDATE(), 
 				current_flag = 0
-		  WHEN NOT MATCHED THEN  
-		  INSERT 
+		  WHEN NOT MATCHED BY Target 
+		  THEN  INSERT 
 		  (
 			[medicine_ID]
-			,[medicineFactory_ID]
-			,[name]
-			,[latin_name]
-			,[dose]
-			,[side_effects]
-			,[price]
-			,[description]
-		  )
-		  VALUES 
-		  (
-			Source.[medicine_ID], 
-			Source.[medicineFactory_ID],
-			Source.[name],
-			Source.[last_name],
-			Source.[dose],
-			Source.[side_effects],
-			Source.[price],
-			Source.[description]
-		  )
-		  OUTPUT $ACTION, 
-			Source.[medicine_ID], 
-			Source.[medicineFactory_ID],
-			Source.[name],
-			Source.[last_name],
-			Source.[dose],
-			Source.[side_effects],
-			Source.[price],
-			Source.[description],
-			GETDATE(),
-			NULL,
-			1
-		) 
-		AS CHANGES 
-		(
-			ACTION, 
-			[medicine_ID]
-			,[medicineFactory_ID]
 			,[name]
 			,[latin_name]
 			,[dose]
@@ -189,8 +158,38 @@ BEGIN
 			,[start_date]
 			,[end_date]
 			,[current_flag]
-		)
-		WHERE ACTION='UPDATE';
+		  )
+		  VALUES 
+		  (
+			Source.[medicine_ID], 
+			Source.[name],
+			Source.[latin_name],
+			Source.[dose],
+			Source.[side_effects],
+			Source.[price],
+			Source.[description],
+			GETDATE(),
+			NULL,
+			1
+		  )
+		WHEN NOT MATCHED BY SOURCE AND Target.[current_flag] = 1
+		  THEN UPDATE SET
+			  [current_flag] = 0,
+			  [end_date]  = GETDATE();
+
+		INSERT INTO HospitalDW.Pharmacy.Medicines
+		SELECT [medicine_ID]
+					,[name]
+					,[latin_name]
+					,[dose]
+					,[side_effects]
+					,[price]
+					,[description]
+					,GETDATE()
+					,NULL
+					,1
+		FROM @Tmp;
+
 		INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [text], [affected_rows])
 		VALUES (GETDATE(), 'Pharmacy.Medicines', 1, 'Update or Insert was Successful', @@ROWCOUNT);
 	END TRY
