@@ -3,7 +3,7 @@ DataBase2 Project				: Create Stage Area Tables
 Authors							: Sajede Nicknadaf,Maryam Saeidmehr,Nastaran Ashoori
 Student Numbers					: 9637453,9629373,9631793
 Semester						: fall 1399
-version							: 1
+version							: 2
 ***************************************************************************/
 --InsuranceCompanies
 create table InsuranceCompanies(
@@ -124,6 +124,33 @@ medicine_ID int null
 );
 --Logs
 create table Logs(
-process varchar(200),
-process_time Datetime
+[date] datetime,
+table_name varchar(50),
+[status] tinyint,
+[text] varchar(500),
+affected_rows int
 );
+
+/*
+******************for create Logs_v2
+drop table Logs;
+create table Logs(
+[date] datetime,
+table_name varchar(50),
+[status] tinyint,
+[text] varchar(500),
+affected_rows int
+);
+*/
+
+/*
+********************if you want delete all tables in SA
+truncate table PrescriptionMedicines;
+truncate table Insurances;
+truncate table Patients;
+truncate table MedicineFactories;
+truncate table Medicines;
+truncate table MedicineOrderHeaders;
+truncate table MedicineOrderDetails;
+truncate table Logs;
+*/
