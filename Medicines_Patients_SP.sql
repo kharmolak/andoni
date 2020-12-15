@@ -24,11 +24,11 @@ BEGIN
 			FROM HospitalSA.dbo.Patients;
 
 		INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [text], [affected_rows])
-		VALUES (GETDATE(), 'dbo.Patients', 1, 'Patients First Load', @@ROWCOUNT);
+		VALUES (GETDATE(), 'dbo.Patients', 1, 'Patients First Load was Successful', @@ROWCOUNT);
 	END TRY
 	BEGIN CATCH
 		INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [text], [affected_rows])
-		VALUES (GETDATE(), 'dbo.Patients', 0, ERROR_MESSAGE(), @@ROWCOUNT);
+		VALUES (GETDATE(), 'dbo.Patients', 0, 'Patients First Load was Failed', @@ROWCOUNT);
 	END CATCH
 END
 GO
