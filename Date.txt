@@ -22,6 +22,5 @@ create table dw.date
     CalendarYear                int,
     PersianCalendarYear         int,
     CalendarSemester            int,
-    PersianCalendarSemester     int,
-    dateKey                     date
+    PersianCalendarSemester     int
 )
