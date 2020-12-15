@@ -124,17 +124,17 @@ medicine_code int,
 TimeKey int NOT NULL,
 total_number_bought int,
 total_cost int,
+number_of_patients_bought int,
 medicineFactory_code int,
 foreign key (medicine_code) references Pharmacy.Medicines(medicine_code),
 foreign key (TimeKey) references Date(TimeKey),
 foreign key (medicineFactory_code) references Pharmacy.MedicineFactories(medicineFactory_code)
-)
+);
 --MedicineAccumulativeFact
 create table Pharmacy.MedicineAccumulativeFact(
 medicine_code int,
 total_number_bought int,
 total_cost int,
-last_unit_price int,
 number_of_patients_bought int,
 medicineFactory_code int,
 foreign key (medicine_code) references Pharmacy.Medicines(medicine_code),
