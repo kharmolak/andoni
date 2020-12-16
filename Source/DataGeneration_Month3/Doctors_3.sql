@@ -1,0 +1,6 @@
+﻿INSERT dbo.Doctors(doctor_ID, department_ID, national_code, license_code, first_name, last_name, birthdate, phone_number) VALUES (1007, 29, '6434ZD0X6Q', 'Gxsle5K8bMe5EVo', 'Erasmo', 'Wasson', '1995-05-02', '(784) 105-7292')
+INSERT dbo.Doctors(doctor_ID, department_ID, national_code, license_code, first_name, last_name, birthdate, phone_number) VALUES (1008, 23, '15DH4HMO21', 'iE3EmX6urIgq70Y', 'Edwin', 'Carl', '1977-01-11', '(465) 098-1888')
+INSERT dbo.Doctors(doctor_ID, department_ID, national_code, license_code, first_name, last_name, birthdate, phone_number) VALUES (1009, 18, 'L25KNEMT06', 'T5ch09793V9tCNa', 'Moses', 'Estep', '1968-05-12', '(730) 123-8017')
+INSERT dbo.Doctors(doctor_ID, department_ID, national_code, license_code, first_name, last_name, birthdate, phone_number) VALUES (1010, 13, '60315P6W08', 'K0e6ytA1gctX9Hx', 'Clement', 'Hammonds', '1972-06-14', '(434) 214-4385')
+INSERT dbo.Doctors(doctor_ID, department_ID, national_code, license_code, first_name, last_name, birthdate, phone_number) VALUES (1011, 18, 'KK37N56I22', 'YOWIH879CCm9J1Q', 'Candace', 'Smyth', '1941-04-01', '(519) 896-1274')
+INSERT dbo.Doctors(doctor_ID, department_ID, national_code, license_code, first_name, last_name, birthdate, phone_number) VALUES (1012, 32, 'X4L1720YR0', '04Cu8EWRfqAu0Kj', 'Allen', 'Waterman', '1951-06-17', '(303) 661-0123')

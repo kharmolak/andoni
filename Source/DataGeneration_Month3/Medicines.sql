@@ -1,0 +1,5 @@
+﻿-- 4 new records in total
+INSERT dbo.Medicines(medicine_ID, medicineFactory_ID, name, latin_name, dose, side_effects, price, description) VALUES (1001, 49, 'Oromo', 'John', 263.44, 'The version of the program is not compatible with the version you''re running. Check your computer''s ', 1963, 'Et obcaecati ut sequi sed.')
+INSERT dbo.Medicines(medicine_ID, medicineFactory_ID, name, latin_name, dose, side_effects, price, description) VALUES (1002, 17, 'Arabs', 'Hammerschmidt', 108.94, 'The remote server has been paused or is in the process of being started.', 569, 'Aut facere et quisquam fugiat.')
+INSERT dbo.Medicines(medicine_ID, medicineFactory_ID, name, latin_name, dose, side_effects, price, description) VALUES (1003, 6, 'English', 'Bürger', 130.68, 'The segment is already discarded and cannot be locked.', 1007, 'In vel quis nobis. Rem quas! Minus ut. Et laudantium.')
+INSERT dbo.Medicines(medicine_ID, medicineFactory_ID, name, latin_name, dose, side_effects, price, description) VALUES (1004, 20, 'Persians', 'Blind', 230.95, 'Too many files opened for sharing.', 108, 'Natus aliquid tenetur accusamus. Officiis hic vitae! Architecto ut delectus.')
