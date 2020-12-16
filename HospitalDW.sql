@@ -64,7 +64,7 @@ CREATE TABLE Date (
     WeekNumberOfYear            int,
     PersianWeekNumberOfYear     int,
     EnglishMonthName            varchar(max),
-    PersianMonthName            varchar(max),
+    PersianMonthName            nvarchar(max),
     MonthNumberOfYear           int,
     PersianMonthNumberOfYear    int,
     CalendarQuarter             int,
