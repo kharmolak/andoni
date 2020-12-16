@@ -35,8 +35,7 @@ create or alter procedure Pharmacy.MedicineFactoryLoader
 		VALUES (GETDATE(), 'dbo.MedicineFactories', 0, 'Error while inserting or updating', @@ROWCOUNT);
 	end catch
 end
-
-exec MedicineFactoryLoader
+go
 
 ------------------------------------------------------
 ------------------------------------------------------
@@ -74,5 +73,3 @@ begin
         select ERROR_MESSAGE()
 	end catch
 end
-
-exec MedicineFactoryFirstLoader

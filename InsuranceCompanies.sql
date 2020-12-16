@@ -31,8 +31,7 @@ begin
         select ERROR_MESSAGE()
 	end catch
 end
-
-exec InsuranceCompaniesFirstLoader
+go
 ---------------------------------------------
 ---------------------------------------------
 
@@ -74,5 +73,3 @@ create or alter procedure InsuranceCompaniesLoader
 		VALUES (GETDATE(), 'dbo.InsuranceCompanies', 0, 'Error while inserting or updating', @@ROWCOUNT);
 	end catch
 end
-
-exec InsuranceCompaniesFirstLoader
