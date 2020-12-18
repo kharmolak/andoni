@@ -94,3 +94,9 @@ GO
 	END CATCH
  END
  GO
+
+ -- Test the procedures ------------------------------------------
+--EXEC [Pharmacy].uspFirstLoad;
+--SELECT * FROM Logs;
+--EXEC [Pharmacy].uspUsaual;
+--SELECT * FROM Logs;
