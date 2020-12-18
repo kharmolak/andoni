@@ -1,7 +1,0 @@
-create table Logs
-(
-    date       datetime,
-    table_name varchar(50),
-    status     tinyint,
-    text       varchar(500)
-)
