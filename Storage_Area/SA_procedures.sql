@@ -101,7 +101,10 @@ begin
 			patient_ID int,
 			order_date date,
 			total_price int);
-		set @end_date=getdate();
+		set @end_date=(
+			select max(order_date)
+			from Hospital.dbo.MedicineOrderHeaders
+		);
 		set @temp_cur_date=isnull((
 			select dateadd(day,1,max(order_date))
 			from MedicineOrderHeaders
@@ -109,7 +112,7 @@ begin
 			select min(order_date)
 			from Hospital.dbo.MedicineOrderHeaders
 		));
-		while @temp_cur_date<@end_date begin
+		while @temp_cur_date<=@end_date begin
 			begin try
 				--read this day OrderHeader
 				insert into @tmp_order
