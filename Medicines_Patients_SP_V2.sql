@@ -174,7 +174,7 @@ BEGIN
 						1
 			  FROM HospitalDW.Pharmacy.Medicines AS Target INNER JOIN HospitalSA.dbo.Medicines AS Source
 			  ON  [Target].medicine_ID = Source.medicine_ID 
-			  AND [Target].[end_date] = CONVERT(DATE, GETDATE());
+			  AND [Target].[end_date] = @curr_date;
 
 		INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [text], [affected_rows])
 		VALUES (GETDATE(), 'Pharmacy.Medicines', 1, 'Update or Insert was Successful', @@ROWCOUNT + @RowAffected);
