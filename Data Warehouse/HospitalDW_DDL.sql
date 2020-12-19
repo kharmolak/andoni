@@ -13,10 +13,10 @@ go
 create schema Clinic;
 go
 /***********************************Table********************************/
+
 --Patients
 create table Patients(
-patient_code int IDENTITY(1,1) primary key,
-patient_ID int,
+patient_ID int primary key,
 national_code varchar(15) not null,
 [name] varchar(30) not null,
 family varchar(30) not null,
@@ -28,8 +28,7 @@ phone_number varchar(25) not null
 );
 --MedicineFactories
 create table Pharmacy.MedicineFactories(
-medicineFactory_code int IDENTITY(1,1) primary key,
-medicineFactory_ID int,
+medicineFactory_ID int primary key,
 [name] varchar(75) not null,
 license_code varchar(25) not null,
 phone_number varchar(25) null
@@ -76,15 +75,13 @@ CREATE TABLE Date (
    )
 --Departments
 create table Departments(
-department_code int IDENTITY(1,1) primary key,
-department_ID int,
+department_ID int primary key,
 [name] varchar(30) not null,
 [description] varchar(300) null
 );
 --Doctors
 create table Doctors(
-doctor_code int IDENTITY(1,1) primary key,
-doctor_ID int,
+doctor_ID int primary key,
 national_code varchar(15) not null,
 license_code varchar(25) not null,
 [name] varchar(30) not null,
@@ -94,8 +91,7 @@ phone_number varchar(25) not null,
 );
 --InsuranceCompanies
 create table InsuranceCompanies(
-insuranceCompany_code int IDENTITY(1,1) primary key,
-insuranceCompany_ID int,
+insuranceCompany_ID int primary key,
 [name] varchar(75) not null,
 license_code varchar(25) not null,
 phone_number varchar(25) null,
@@ -108,37 +104,30 @@ create table Pharmacy.MedicineTransactionFact(
 patient_code int,
 insuranceCompany_code int,
 medicine_code int,
+medicine_ID int,
 medicineFactory_code int,
 TimeKey int NOT NULL,
 number_of_units_bought int,
-cost int,
-foreign key (patient_code) references patients(patient_code),
-foreign key (medicine_code) references Pharmacy.Medicines(medicine_code),
-foreign key (medicineFactory_code) references Pharmacy.MedicineFactories(medicineFactory_code),
-foreign key (TimeKey) references Date(TimeKey),
-foreign key (insuranceCompany_code) references InsuranceCompanies(insuranceCompany_code)
+cost int
 )
 --MedicineSnapshotFact
 create table Pharmacy.MedicineSnapshotFact(
 medicine_code int,
+medicine_ID int,
 TimeKey int NOT NULL,
 total_number_bought int,
 total_cost int,
 number_of_patients_bought int,
-medicineFactory_code int,
-foreign key (medicine_code) references Pharmacy.Medicines(medicine_code),
-foreign key (TimeKey) references Date(TimeKey),
-foreign key (medicineFactory_code) references Pharmacy.MedicineFactories(medicineFactory_code)
+medicineFactory_code int
 );
 --MedicineAccumulativeFact
 create table Pharmacy.MedicineAccumulativeFact(
 medicine_code int,
+medicine_ID int,
 total_number_bought int,
 total_cost int,
 number_of_patients_bought int,
-medicineFactory_code int,
-foreign key (medicine_code) references Pharmacy.Medicines(medicine_code),
-foreign key (medicineFactory_code) references Pharmacy.MedicineFactories(medicineFactory_code)
+medicineFactory_code int
 );
 
 -------------------------------------------------------------
@@ -152,12 +141,7 @@ TimeKey int NOT NULL,
 diagnosis varchar(300) null,
 [status] int not null,
 department_code int,
-price int not null,
-foreign key (TimeKey) references Date(TimeKey),
-foreign key (patient_code) references Patients(patient_code),
-foreign key (doctor_code) references Doctors(doctor_code),
-foreign key (department_code) references Departments(department_code),
-foreign key (insuranceCompany_code) references InsuranceCompanies(insuranceCompany_code)
+price int not null
 )
 --AppointmentSnapshotFact
 create table Clinic.AppointmentSnapshotFact (
@@ -165,19 +149,14 @@ doctor_code int,
 TimeKey int NOT NULL,
 department_code int,
 total_price int not null,
-number_of_patient int,
-foreign key (TimeKey) references Date(TimeKey),
-foreign key (doctor_code) references Doctors(doctor_code),
-foreign key (department_code) references Departments(department_code),
+number_of_patient int
 )
 --AppointmentAccumulativeFact
 create table Clinic.AppointmentAccumulativeFact (
 doctor_code int,
 department_code int,
 total_price int not null,
-number_of_patient int,
-foreign key (doctor_code) references Doctors(doctor_code),
-foreign key (department_code) references Departments(department_code),
+number_of_patient int
 )
 
 -----------------------------------------------
@@ -191,13 +170,7 @@ start_date int,
 end_date int,
 price int not null,
 [status] int not null,
-department_code int,
-foreign key (doctor_code) references Doctors(doctor_code),
-foreign key (department_code) references Departments(department_code),
-foreign key (start_date) references Date(TimeKey),
-foreign key (end_date) references Date(TimeKey),
-foreign key (patient_code) references Patients(patient_code),
-foreign key (insuranceCompany_code) references InsuranceCompanies(insuranceCompany_code),
+department_code int
 )
 --SurgerySnapShotFact
 create table Hospital.SurgerySnapshotFact(
@@ -207,10 +180,7 @@ TimeKey int,
 total_price int not null,
 number_of_surgeries int,
 number_of_successful_surgeries int,
-number_of_failed_surgeries int,
-foreign key (doctor_code) references Doctors(doctor_code),
-foreign key (department_code) references Departments(department_code),
-foreign key (TimeKey) references Date(TimeKey),
+number_of_failed_surgeries int
 )
 --SurgeryAccumulativeFact
 create table Hospital.SurgeryAccumulativeFact(
@@ -219,9 +189,7 @@ department_code int,
 total_price int not null,
 number_of_surgeries int,
 number_of_successful_surgeries int,
-number_of_failed_surgeries int,
-foreign key (doctor_code) references Doctors(doctor_code),
-foreign key (department_code) references Departments(department_code),
+number_of_failed_surgeries int
 )
 --HospitalTransactionFact
 create table Hospital.HospitalTransactionFact(
@@ -234,14 +202,7 @@ discharg_date int not null,
 room_number int null,
 daily_price int not null,
 total_price int not null,
-[status] int not null,
-hospitalization_days int,
-foreign key (doctor_code) references Doctors(doctor_code),
-foreign key (patient_code) references Patients(patient_code),
-foreign key (department_code) references Departments(department_code),
-foreign key (admit_date) references Date(TimeKey),
-foreign key (discharg_date) references Date(TimeKey),
-foreign key (insuranceCompany_code) references InsuranceCompanies(insuranceCompany_code)
+hospitalization_days int
 )
 --HospitalSnapshotFact
 create table Hospital.HospitalSnapshotFact(
@@ -251,10 +212,7 @@ TimeKey int not null,
 total_patients_in_hospital int,
 patients_discharged int,
 patients_in_hospital int,
-total_price int not null,
-foreign key (doctor_code) references Doctors(doctor_code),
-foreign key (department_code) references Departments(department_code),
-foreign key (TimeKey) references Date(TimeKey),
+total_price int not null
 )
 --HospitalAccumulativeFact
 create table Hospital.HospitalAccumulativeFact(
@@ -263,10 +221,27 @@ department_code int,
 total_patients_in_hospital int,
 patients_discharged int,
 patients_in_hospital int,
-total_price int not null,
-foreign key (doctor_code) references Doctors(doctor_code),
-foreign key (department_code) references Departments(department_code),
+total_price int not null
 )
+-----------------------------------------------
+----------------------------------------------
+create table Hospital.SurgeryStatus(
+status_ID int primary key,
+[description] varchar(100)
+);
+create table Clinic.AppointmentStatus(
+status_ID int primary key,
+[description] varchar(100)
+);
+insert into Hospital.SurgeryStatus values
+(0,'Not Successful'),
+(1,'Successful');
+insert into Clinic.AppointmentStatus values
+(0,'Canseled'),
+(1,'Done');
+
+-----------------------------------------------
+----------------------------------------------
 --logtable
 create table Logs
 (
