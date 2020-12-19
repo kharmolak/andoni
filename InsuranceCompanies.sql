@@ -2,15 +2,17 @@ create or alter procedure InsuranceCompaniesFirstLoader
 as
 begin
 	begin try 
-		delete from HospitalDW.dbo.InsuranceCompanies
-		dbcc CHECKIDENT([HospitalDW.dbo.InsuranceCompanies],RESEED,0)
+		truncate table HospitalDW.dbo.InsuranceCompanies
 		insert into HospitalDW.dbo.InsuranceCompanies
-        SELECT [insuranceCompany_ID]
+        	SELECT [insuranceCompany_ID]
 		,[name]
 		,[license_code]
 		,[phone_number]
 		,[address]
 		FROM HospitalSA.dbo.InsuranceCompanies
+		insert into HospitalDW.dbo.InsuranceCompanies
+		values(-1,'Nothing','Nothing','Nothing','Nothing')
+		
 	---------------------------------------------------
 		insert into [dbo].[Logs]
 			([date]

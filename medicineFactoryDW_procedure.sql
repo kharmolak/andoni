@@ -44,15 +44,16 @@ create or alter procedure Pharmacy.MedicineFactoryFirstLoader
 as
 begin
 	begin try 
-		delete from HospitalDW.Pharmacy.MedicineFactories
-		dbcc CHECKIDENT([HospitalDW.Pharmacy.MedicineFactories],RESEED,0)
+		truncate table HospitalDW.Pharmacy.MedicineFactories
 		insert into HospitalDW.Pharmacy.MedicineFactories 
-        select 
+        	select 
 		[medicineFactory_ID],
 		[name],
 		[license_code],
 		[phone_number]
 		from HospitalSA.dbo.MedicineFactories;
+		insert into HospitalDW.Pharmacy.MedicineFactories 
+		values(-1,'Nothing','Nothing','Nothing')
 	---------------------------------------------------
 		insert into [dbo].[Logs]
 			([date]
