@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 /**************************************************************************
 DataBase2 Project				: Create Stage Area Procedures
 Authors							: Sajede Nicknadaf,Maryam Saeidmehr,Nastaran Ashoori
@@ -168,15 +167,7 @@ begin
 end
 go
 
---exec InsertToSA;
-=======
-/**************************************************************************
-DataBase2 Project				: Create Stage Area Procedures
-Authors							: Sajede Nicknadaf,Maryam Saeidmehr,Nastaran Ashoori
-Student Numbers					: 9637453,9629373,9631793
-Semester						: fall 1399
-version							: 2
-***************************************************************************/
+
 --InsuranceCompanies
 create or alter procedure InsuranceCompanies_insert as
 begin
@@ -343,4 +334,4 @@ end
 go
 
 --exec InsertToSA;
->>>>>>> f485c682dadbb8242100a43f24c0280b7047dc69
+
