@@ -675,7 +675,7 @@ CREATE OR ALTER PROCEDURE [Pharmacy].uspFirstLoad
 		BEGIN TRY
 			DECLARE @curr_date DATE;
 			SET @curr_date=(
-				SELECT MIN(order_date)
+				SELECT MAX(order_date)
 				FROM [HospitalSA].[dbo].[MedicineOrderHeaders]
 			);
 			EXEC dbo.InsuranceCompaniesFirstLoader;
@@ -771,3 +771,9 @@ GO
 --SELECT * FROM Logs;
 --EXEC [Pharmacy].uspUsaual;
 --SELECT * FROM Logs;
+
+--for test SCD
+--select * from Pharmacy.Medicines where medicine_ID=1
+--select * from Patients where patient_ID=1
+
+--select * from Pharmacy.MedicineTransactionFact where TimeKey=20140930
