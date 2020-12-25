@@ -94,6 +94,7 @@ ilness_ID int not null,
 doctor_ID int not null,
 [start_date] date not null,
 [end_date] date null,
+degree int null,--[1-5]
 foreign key(ilness_ID) references Ilnesses(illness_ID),
 foreign key(patient_ID) references Patients(patient_ID),
 foreign key(doctor_ID) references Doctors(doctor_ID)
