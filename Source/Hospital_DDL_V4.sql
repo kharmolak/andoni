@@ -194,10 +194,11 @@ main_detected_illness int not null,
 appointment_number int not null,
 appointment_date date not null,
 price int not null,
+main_detected_illness int not null,
 [status] int not null,
 foreign key(patient_ID) references Patients(patient_ID),
 foreign key(doctor_ID) references Doctors(doctor_ID),
-
+foreign key(main_detected_illness) references Illnesses(illness_ID)
 );
 --Tests
 create table Tests(
