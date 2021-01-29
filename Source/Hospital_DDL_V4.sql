@@ -93,13 +93,11 @@ create table PatientIlnesses(
 patientIlnesse_ID int primary key,
 patient_ID int not null,
 ilness_ID int not null,
-doctor_ID int not null,
 [start_date] date not null,
 [end_date] date null,
 degree int null,--[1-5]
 foreign key(ilness_ID) references Ilnesses(illness_ID),
-foreign key(patient_ID) references Patients(patient_ID),
-foreign key(doctor_ID) references Doctors(doctor_ID)
+foreign key(patient_ID) references Patients(patient_ID)
 );
 --Nurses
 create table Nurses(
@@ -192,20 +190,14 @@ create table Appointments(
 appointment_ID int primary key,
 patient_ID int not null,
 doctor_ID int not null,
+main_detected_illness int not null,
 appointment_number int not null,
 appointment_date date not null,
 price int not null,
 [status] int not null,
 foreign key(patient_ID) references Patients(patient_ID),
-foreign key(doctor_ID) references Doctors(doctor_ID)
-);
---PrescriptionMedicines
-create table PrescriptionMedicines(
-prescriptionMedicines_ID int primary key,
-appointment_ID int not null,
-medicine_ID int not null,
-foreign key (appointment_ID) references Appointments(appointment_ID),
-foreign key (medicine_ID) references Medicines(medicine_ID)
+foreign key(doctor_ID) references Doctors(doctor_ID),
+
 );
 --Tests
 create table Tests(
