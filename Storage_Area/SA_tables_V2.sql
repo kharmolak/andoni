@@ -161,10 +161,10 @@ create table Appointments(
 appointment_ID int ,
 patient_ID int ,
 doctor_ID int ,
+main_detected_illness int,
 appointment_number int ,
 appointment_date date ,
 price int ,
-main_detected_illness int,
 [status] int 
 );
 --Logs
