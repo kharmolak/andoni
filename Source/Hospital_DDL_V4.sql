@@ -1,7 +1,7 @@
 /**************************************************************************
-DataBase2 Project				: Create Source Tables
-Authors							: Sajede Nicknadaf,Maryam Saeidmehr,Nastaran Ashoori
-Student Numbers					: 9637453,9629373,9631793
+DataBase2 Project		: Create Source Tables
+Authors						: Sajede Nicknadaf,Maryam Saeedmehr
+Student Numbers		: 9637453,9629373
 Semester						: fall 1399
 version							: 4
 ***************************************************************************/
@@ -197,7 +197,7 @@ price int not null,
 [status] int not null,
 foreign key(patient_ID) references Patients(patient_ID),
 foreign key(doctor_ID) references Doctors(doctor_ID),
-foreign key(main_detected_illness) references Illnesses(illness_ID)
+foreign key(main_detected_illness) references Ilnesses(illness_ID)
 );
 --Tests
 create table Tests(
