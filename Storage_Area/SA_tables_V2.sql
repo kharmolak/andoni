@@ -164,6 +164,7 @@ doctor_ID int ,
 appointment_number int ,
 appointment_date date ,
 price int ,
+main_detected_illness int,
 [status] int 
 );
 --Logs
