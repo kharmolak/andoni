@@ -88,8 +88,7 @@ create table PatientIlnesses(
 patientIlnesse_ID int ,
 patient_ID int ,
 ilness_ID int ,
-[start_date] date ,
-[end_date] date ,
+[detection_date] date ,
 degree int --[1-5]
 );
 --Hospitalizations

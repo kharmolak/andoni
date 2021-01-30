@@ -124,23 +124,6 @@ begin
 	end catch
 end
 go
---PatientIlnesses
-create or alter procedure PatientIlnesses_insert as
-begin
-	begin try
-		truncate table PatientIlnesses;
-		insert into PatientIlnesses
-		select patientIlnesse_ID,patient_ID,ilness_ID,doctor_ID,[start_date],[end_date],degree
-		from Hospital.dbo.PatientIlnesses; 
-		insert into Logs values
-		(GETDATE(),'PatientIlnesses',1,'PatientIlnesses inserted',@@ROWCOUNT);
-	end try
-	begin catch
-		insert into Logs values
-		(GETDATE(),'PatientIlnesses',0,'ERROR : PatientIlnesses may not inserted',@@ROWCOUNT);
-	end catch
-end
-go
 --MedicineFactories
 create or alter procedure MedicineFactories_insert as
 begin
@@ -281,6 +264,52 @@ begin
 	end catch
 end
 go
+--PatientIlnesses
+create or alter procedure  PatientIlnesses_insert as 
+begin
+	begin try
+		declare @temp_cur_date date;
+		declare @end_date date;
+
+		set @end_date=(
+			select max(detection_date)
+			from Hospital.dbo.PatientIlnesses
+		);
+		set @temp_cur_date=isnull((
+			select dateadd(day,1,max(detection_date))
+			from PatientIlnesses
+		),(
+			select min(detection_date)
+			from Hospital.dbo.PatientIlnesses
+		));
+		while @temp_cur_date<=@end_date begin
+			begin try
+				--read and insert this day appointments
+				insert into PatientIlnesses
+				select patientIlnesse_ID,patient_ID,ilness_ID,[detection_date],degree
+				from Hospital.dbo.PatientIlnesses
+				where detection_date=@temp_cur_date;
+				--log
+				insert into Logs values
+				(GETDATE(),'PatientIlnesses',1,'PatientIlnesses of '+convert(varchar,@temp_cur_date)+' inserted',@@ROWCOUNT);
+				--add a day 
+				set @temp_cur_date=DATEADD(day, 1, @temp_cur_date);
+			end try
+			begin catch
+				insert into Logs values
+				(GETDATE(),'PatientIlnesses',0,'ERROR : PatientIlnesses of '+convert(varchar,@temp_cur_date)+' may not inserted',@@ROWCOUNT);
+			end catch
+		end
+
+		insert into Logs values
+		(GETDATE(),'PatientIlnesses',1,'PatientIlnesses inserted',@@ROWCOUNT);
+	end try
+	begin catch
+		insert into Logs values
+		(GETDATE(),'PatientIlnesses',0,'ERROR : PatientIlnesses may not inserted',@@ROWCOUNT);
+	end catch
+end
+go
 --MainProcedure
 create or alter procedure InsertToSA as
 begin
@@ -292,11 +321,11 @@ begin
 		exec Ilnesses_insert;
 		exec Patients_insert;
 		exec Doctors_insert;
-		exec PatientIlnesses_insert;
 		exec MedicineFactories_insert;
 		exec Medicines_insert;
 		exec MedicineOrder_insert;
 		exec Appointments_insert;
+		exec PatientIlnesses_insert;
 		insert into Logs values
 		(GETDATE(),'All Tables',1,'All insertions done!',@@ROWCOUNT);
 	end try
