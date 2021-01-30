@@ -1,7 +1,7 @@
 /**************************************************************************
 DataBase2 Project				: Create Stage Area Procedures
-Authors							: Sajede Nicknadaf,Maryam Saeidmehr,Nastaran Ashoori
-Student Numbers					: 9637453,9629373,9631793
+Authors							: Sajede Nicknadaf,Maryam Saeidmehr
+Student Numbers					: 9637453,9629373
 Semester						: fall 1399
 version							: 2
 ***************************************************************************/
