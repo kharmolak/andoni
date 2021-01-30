@@ -1,7 +1,7 @@
 /**************************************************************************
-DataBase2 Project		: Create Source Tables
-Authors						: Sajede Nicknadaf,Maryam Saeedmehr
-Student Numbers		: 9637453,9629373
+DataBase2 Project				: Create Source Tables
+Authors							: Sajede Nicknadaf,Maryam Saeidmehr
+Student Numbers					: 9637453,9629373
 Semester						: fall 1399
 version							: 4
 ***************************************************************************/
@@ -93,8 +93,7 @@ create table PatientIlnesses(
 patientIlnesse_ID int primary key,
 patient_ID int not null,
 ilness_ID int not null,
-[start_date] date not null,
-[end_date] date null,
+[detection_date] date not null,
 degree int null,--[1-5]
 foreign key(ilness_ID) references Ilnesses(illness_ID),
 foreign key(patient_ID) references Patients(patient_ID)
@@ -197,7 +196,7 @@ price int not null,
 [status] int not null,
 foreign key(patient_ID) references Patients(patient_ID),
 foreign key(doctor_ID) references Doctors(doctor_ID),
-foreign key(main_detected_illness) references Ilnesses(illness_ID)
+foreign key(main_detected_illness) references Illnesses(illness_ID)
 );
 --Tests
 create table Tests(
