@@ -1,10 +1,17 @@
 /**************************************************************************
-DataBase2 Project				: Create Source Tables
-Authors							: Sajede Nicknadaf,Maryam Saeidmehr
-Student Numbers					: 9637453,9629373
+DataBase2 Project		: Create Source Tables
+Authors						: Sajede Nicknadaf, Maryam Saeedmehr
+Student Numbers		: 9637453, 9629373
 Semester						: fall 1399
-version							: 4
+version							: 5
 ***************************************************************************/
+drop database if exists Hospital
+go
+create database Hospital
+go
+use Hospital
+go
+
 --InsuranceCompanies
 create table InsuranceCompanies(
 insuranceCompany_ID int primary key,
@@ -196,7 +203,7 @@ price int not null,
 [status] int not null,
 foreign key(patient_ID) references Patients(patient_ID),
 foreign key(doctor_ID) references Doctors(doctor_ID),
-foreign key(main_detected_illness) references Illnesses(illness_ID)
+foreign key(main_detected_illness) references Ilnesses(illness_ID)
 );
 --Tests
 create table Tests(
