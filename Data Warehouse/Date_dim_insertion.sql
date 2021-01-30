@@ -17,5 +17,3 @@ with
 	fieldterminator = '\t',
 	CODEPAGE = '65001'
 );
-
--- Nastaran ?

@@ -1,19 +1,23 @@
-/**************************************************************************
-DataBase2 Project				: Create Data Warehouse Tables
-Authors							: Sajede Nicknadaf,Maryam Saeidmehr
-Student Numbers					: 9637453,9629373
+/*************************************************************************
+DataBase2 Project		: Create Data Warehouse Tables
+Authors						: Sajede Nicknadaf,Maryam Saeedmehr
+Student Numbers		: 9637453, 9629373
 Semester						: fall 1399
 version							: 3
-***************************************************************************/
-/***********************************Schema********************************/
-/*create schema Hospital;
-go*/
+**************************************************************************/
+drop database if exists HospitalDW
+go
+
+create database HospitalDW
+go 
+
+/***********************************Schema******************************/
 create schema Pharmacy;
 go
+
 create schema Clinic;
 go
 /***********************************Table********************************/
---InsuranceCompanies
 create table InsuranceCompanies(
     insuranceCompany_ID int primary key,
     [name]              varchar(75) not null,
@@ -22,7 +26,6 @@ create table InsuranceCompanies(
     [address]           varchar(300) null
 );
 
---Insurances
 create table Insurances(
 	insurance_ID				int primary key,
 	insuranceCompany_ID			int not null,
@@ -40,7 +43,6 @@ create table Insurances(
 	radiology_reduction			int not null,
 );
 
---Patients
 create table Patients(
     patient_ID      int primary key,
     national_code   varchar(15) not null,
@@ -56,7 +58,6 @@ create table Patients(
 	death_reason	int null,--SCD1
 );
 
---MedicineFactories
 create table Pharmacy.MedicineFactories(
     medicineFactory_ID  int primary key,
     [name]              varchar(75) not null,
@@ -64,7 +65,6 @@ create table Pharmacy.MedicineFactories(
     phone_number        varchar(25) null
 );
 
---Medicines
 create table Pharmacy.Medicines(
     medicine_code   int IDENTITY(1,1) primary key,
     medicine_ID     int,
@@ -82,7 +82,6 @@ create table Pharmacy.Medicines(
     current_flag    int
 );
 
---date
 CREATE TABLE Date (
     TimeKey                     int primary key,
     FullDateAlternateKey        varchar(max),
@@ -109,14 +108,12 @@ CREATE TABLE Date (
     PersianCalendarSemester     int
 );
 
---Departments
 create table Clinic.Departments(
     department_ID   int primary key,
     [name]          varchar(30) not null,
     [description]   varchar(300) null
 );
 
---Doctors
 create table Clinic.Doctors(
     doctor_ID				int primary key,
     national_code			varchar(15) not null,
@@ -137,7 +134,6 @@ create table Clinic.Doctors(
 	surgery_portion			int not null
 );
 
---IlnessTypes
 create table Clinic.IlnessTypes(
 	ilnessType_ID			int primary key,
 	[name]					varchar(50) not null,
@@ -145,7 +141,6 @@ create table Clinic.IlnessTypes(
 	related_department_ID	int not null
 );
 
---Ilnesses
 create table Clinic.Ilnesses(
 	illness_ID			int primary key,
 	[name]				varchar(100) not null,

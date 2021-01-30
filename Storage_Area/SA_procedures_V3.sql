@@ -1,11 +1,10 @@
 /**************************************************************************
-DataBase2 Project				: Create Stage Area Procedures
-Authors							: Sajede Nicknadaf,Maryam Saeidmehr
-Student Numbers					: 9637453,9629373
+DataBase2 Project		: Create Stage Area Procedures
+Authors						: Sajede Nicknadaf, Maryam Saeedmehr
+Student Numbers		: 9637453, 9629373
 Semester						: fall 1399
 version							: 3
 ***************************************************************************/
---InsuranceCompanies
 create or alter procedure InsuranceCompanies_insert as
 begin
 	begin try
@@ -22,7 +21,7 @@ begin
 	end catch
 end
 go
---Insurances
+
 create or alter procedure Insurances_insert as
 begin
 	begin try
@@ -39,7 +38,7 @@ begin
 	end catch
 end
 go
---Departments
+
 create or alter procedure Departments_insert as
 begin
 	begin try
@@ -56,7 +55,7 @@ begin
 	end catch
 end
 go
---IlnessTypes
+
 create or alter procedure IlnessTypes_insert as
 begin
 	begin try
@@ -73,7 +72,7 @@ begin
 	end catch
 end
 go
---Ilnesses
+
 create or alter procedure Ilnesses_insert as
 begin
 	begin try
@@ -90,7 +89,7 @@ begin
 	end catch
 end
 go
---Patients
+
 create or alter procedure Patients_insert as
 begin
 	begin try
@@ -107,7 +106,7 @@ begin
 	end catch
 end
 go
---Doctors
+
 create or alter procedure Doctors_insert as
 begin
 	begin try
@@ -124,7 +123,7 @@ begin
 	end catch
 end
 go
---MedicineFactories
+
 create or alter procedure MedicineFactories_insert as
 begin
 	begin try
@@ -141,7 +140,7 @@ begin
 	end catch
 end
 go
---Medicines
+
 create or alter procedure Medicines_insert as
 begin
 	begin try
@@ -158,7 +157,7 @@ begin
 	end catch
 end
 go
---MedicineOrderHeaders
+
 create or alter procedure  MedicineOrder_insert as 
 begin
 	begin try
@@ -225,7 +224,7 @@ begin
 	end catch
 end
 go
---Appointments
+
 create or alter procedure  Appointments_insert as 
 begin
 	begin try
@@ -271,7 +270,7 @@ begin
 	end catch
 end
 go
---PatientIlnesses
+
 create or alter procedure  PatientIlnesses_insert as 
 begin
 	begin try
@@ -317,7 +316,7 @@ begin
 	end catch
 end
 go
---MainProcedure
+
 create or alter procedure InsertToSA as
 begin
 	begin try
@@ -344,4 +343,3 @@ end
 go
 
 --exec InsertToSA;
-

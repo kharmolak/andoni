@@ -1,10 +1,21 @@
 /**************************************************************************
-DataBase2 Project				: Create Stage Area Tables
-Authors							: Sajede Nicknadaf,Maryam Saeidmehr
-Student Numbers					: 9637453,9629373
+DataBase2 Project		: Create Stage Area Tables
+Authors						: Sajede Nicknadaf, Maryam Saeedmehr
+Student Numbers		: 9637453, 9629373
 Semester						: fall 1399
 version							: 3
 ***************************************************************************/
+drop database if exists HospitalSA
+go
+
+create database HospitalSA
+go
+
+use HospitalSA
+go
+
+exec sp_changedbowner 'sa'
+
 create table InsuranceCompanies(
 insuranceCompany_ID int primary key,
 [name] varchar(50) ,
