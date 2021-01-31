@@ -95,7 +95,7 @@ begin
 	begin try
 		truncate table Patients;
 		insert into Patients
-		select patient_ID,national_code,insurance_ID,first_name,last_name,birthdate,height,[weight],gender,phone_number,postal_code,[address],job,education,religion,nationality,marital_status,marital_status_description,death_date,death_reason,additional_info
+		select patient_ID,national_code,insurance_ID,first_name,last_name,birthdate,height,[weight],gender,phone_number,postal_code,[address],death_date,death_reason,additional_info
 		from Hospital.dbo.Patients; 
 		insert into Logs values
 		(GETDATE(),'Patients',1,'Patients inserted',@@ROWCOUNT);
@@ -112,7 +112,7 @@ begin
 	begin try
 		truncate table Doctors;
 		insert into Doctors
-		select doctor_ID,department_ID,national_code,license_code,first_name,last_name,birthdate,gender,religion,nationality,marital_status,marital_status_description,phone_number,postal_code,[address],education_degree,specialty_description,graduation_date,university,contract_start_date,contract_end_date,appointment_portion,additional_info
+		select doctor_ID,department_ID,national_code,license_code,first_name,last_name,birthdate,gender,religion,nationality,marital_status,marital_status_description,phone_number,postal_code,[address],education_degree,specialty_description,graduation_date,university,additional_info
 		from Hospital.dbo.Doctors; 
 		insert into Logs values
 		(GETDATE(),'Doctors',1,'Doctors inserted',@@ROWCOUNT);
@@ -120,6 +120,23 @@ begin
 	begin catch
 		insert into Logs values
 		(GETDATE(),'Doctors',0,'ERROR : Doctors may not inserted',@@ROWCOUNT);
+	end catch
+end
+go
+
+create or alter procedure DoctorContracts_insert as
+begin
+	begin try
+		truncate table DoctorContracts;
+		insert into DoctorContracts
+		select doctorContract_ID,doctor_ID,contract_start_date,contract_end_date,appointment_portion,salary,active,additional_info
+		from Hospital.dbo.DoctorContracts; 
+		insert into Logs values
+		(GETDATE(),'DoctorContracts',1,'DoctorContracts inserted',@@ROWCOUNT);
+	end try
+	begin catch
+		insert into Logs values
+		(GETDATE(),'DoctorContracts',0,'ERROR : DoctorContracts may not inserted',@@ROWCOUNT);
 	end catch
 end
 go
@@ -327,6 +344,7 @@ begin
 		exec Ilnesses_insert;
 		exec Patients_insert;
 		exec Doctors_insert;
+		exec DoctorContracts_insert;
 		exec MedicineFactories_insert;
 		exec Medicines_insert;
 		exec MedicineOrder_insert;

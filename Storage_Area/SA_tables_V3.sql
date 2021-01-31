@@ -99,12 +99,6 @@ gender varchar(10) ,
 phone_number varchar(15) ,
 postal_code varchar(12) ,
 [address] varchar(200) ,
-job varchar(50) ,
-education varchar(100) , 
-religion varchar(100) ,
-nationality varchar(50) ,
-marital_status bit ,
-marital_status_description varchar(20) , -- 0 for single / 1 for married
 death_date date ,
 death_reason int ,
 additional_info varchar(200) 
@@ -130,9 +124,17 @@ education_degree int , --[1-3]
 specialty_description varchar(100) ,
 graduation_date date ,
 university varchar(100) ,
-contract_start_date date ,
-contract_end_date date ,
-appointment_portion int ,
+additional_info varchar(200) 
+);
+
+create table DoctorContracts(
+doctorContract_ID int ,
+doctor_ID int,
+contract_start_date date  ,
+contract_end_date date  ,
+appointment_portion int  ,
+salary int  ,
+active bit  ,
 additional_info varchar(200) 
 );
 
