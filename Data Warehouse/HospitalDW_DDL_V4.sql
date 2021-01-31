@@ -211,93 +211,102 @@ create table Clinic.dimIllnesses(
 create table Pharmacy.factTransactionalMedicine(
     patient_ID							int,
     insuranceCompany_ID			int,
-    medicine_code					int,
-    medicine_ID							int,
+    medicine_code					int, --surrogate key
+    medicine_ID							int, --natural key
     medicineFactory_ID				int,
     TimeKey								int,
+	----------------------------------
     number_of_units_bought	int,
-    paied_price							int,
+	-- bought_dose						int,
+    paid_price							int,
 	real_price								int,
 	insurance_credit					int,
-	factory_debit						int,
+	factory_share						int,
 	income									int,
 );
 
 create table Pharmacy.factMonthlyMedicine(
-	insuranceCompany_ID				int NOT NULL,
-    medicine_code						int NOT NULL,
-    medicine_ID								int,
-	medicineFactory_ID					int NOT NULL,
-    TimeKey									int NOT NULL,
+	insuranceCompany_ID				int,
+    medicine_code						int, --surrogate key
+    medicine_ID								int, --natural key
+	medicineFactory_ID					int,
+    TimeKey									int,
+	-------------------------------------
     total_number_bought				int,
-    total_paied_price						int,
+	-- total_bought_dose					int,
+    total_paid_price						int,
 	total_real_price						int,
 	total_insurance_credit				int,
-	total_factory_debit					int,
+	total_factory_share					int,
 	total_income							int,
     number_of_patients_bought   int
 );
 
 create table Pharmacy.factAccumulativeMedicine(
-	insuranceCompany_ID				int NOT NULL,
-    medicine_code						int NOT NULL,
-    medicine_ID								int,
-	medicineFactory_ID					int NOT NULL,
+	insuranceCompany_ID				int,
+    medicine_code						int, --surrogate key
+    medicine_ID								int, --natural key
+	medicineFactory_ID					int,
+	-------------------------------------
     total_number_bought				int,
-    total_paied_price						int,
+	-- total_bought_dose					int,
+    total_paid_price						int,
 	total_real_price						int,
 	total_insurance_credit				int,
-	total_factory_debit					int,
+	total_factory_share					int,
 	total_income							int,
     number_of_patients_bought   int
 );
 -------------------------------------------------------------
 -------------------------------------------------------------
 create table Clinic.factTransactionAppointment (
-    patient_ID						int NOT NULL,
-    insuranceCompany_ID		int NOT NULL,
-    doctor_ID							int NOT NULL,
-	department_ID					int NOT NULL,
-	main_detected_illness		int NOT NULL,
-    TimeKey							int NOT NULL,
-    [status]								int not null,
-    paied_price						int,
+    patient_ID						int,
+    insuranceCompany_ID		int,
+    doctor_ID							int,
+	department_ID					int,
+	main_detected_illness		int,
+    TimeKey							int,
+	-------------------------------
+    paid_price						int,
 	real_price							int,
 	insurance_credit				int,
-	doctor_debit					int,
+	doctor_share					int,
 	income								int
 );
 
 create table Clinic.factMonthlyAppointment (
-	insuranceCompany_ID		int NOT NULL,
-    doctor_ID							int NOT NULL,
-	department_ID					int NOT NULL,
-    TimeKey							int NOT NULL,
+	insuranceCompany_ID		int,
+    doctor_ID							int,
+	department_ID					int,
+    TimeKey							int,
+	-------------------------------
 	total_paied_price				int,
 	total_real_price				int,
 	total_insurance_credit		int,
-	total_doctor_debit			int,
+	total_doctor_share			int,
 	total_income					int,
 	number_of_patient			int
 );
 
 create table Clinic.factAccumulativeAppointment (
-    insuranceCompany_ID		int NOT NULL,
-    doctor_ID							int NOT NULL,
-	department_ID					int NOT NULL,
+    insuranceCompany_ID		int,
+    doctor_ID							int,
+	department_ID					int,
+	-------------------------------
 	total_paied_price				int,
 	total_real_price				int,
 	total_insurance_credit		int,
-	total_doctor_debit			int,
+	total_doctor_share			int,
 	total_income					int,
 	number_of_patient			int
 );
 
 create table factlessPatientIlnesses(
-	patient_ID				int not null,
-	ilness_ID					int not null,
-	[detection_date]		date not null,
-	degree						int --[1-5]
+	patient_ID				int,
+	illness_ID					int,
+	[detection_date]		date,
+	severity					int, --[1-5]
+	additional_info			varchar(200)
 );
 
 /*-----------------------------------------------
@@ -370,24 +379,24 @@ create table Hospital.factHospitalAccumulative(
     [description]	varchar(100)
 );*/
 
-create table Clinic.AppointmentStatus(
-    status_ID			int primary key,
-    [description]	varchar(100)
-);
+--create table Clinic.AppointmentStatus(
+--    status_ID			int primary key,
+--    [description]	varchar(100)
+--);
 
 /*insert into Hospital.SurgeryStatus values
     (0,'Not Successful'),
     (1,'Successful');
 */
-insert into Clinic.AppointmentStatus values
-    (0,'Canceled'),
-    (1,'Done');
+--insert into Clinic.AppointmentStatus values
+--    (0,'Canceled'),
+--    (1,'Done');
 -----------------------------------------------
 ----------------------------------------------
 create table Logs(
-    date					datetime,
+    [date]				datetime,
     table_name     varchar(50),
-    status				tinyint,
-    text					varchar(500),
+    [status]				bit,
+    [description]	varchar(500),
     affected_rows  int,
 );
