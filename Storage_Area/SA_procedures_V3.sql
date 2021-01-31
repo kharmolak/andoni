@@ -263,7 +263,7 @@ begin
 			begin try
 				--read and insert this day appointments
 				insert into Appointments
-				select appointment_ID,patient_ID,doctor_ID,surrogate_doctor_ID,main_detected_illness,appointment_number,appointment_date,price,payment_method,payment_method_description,credit_card_number,payer,payer_phone_number,additional_info
+				select appointment_ID,patient_ID,doctor_ID,surrogate_doctor_ID,main_detected_illness,appointment_number,appointment_date,price,doctor_share,payment_method,payment_method_description,credit_card_number,payer,payer_phone_number,additional_info
 				from Hospital.dbo.Appointments
 				where appointment_date=@temp_cur_date;
 				--log

@@ -298,6 +298,7 @@ main_detected_illness int ,
 appointment_number int ,
 appointment_date date ,
 price int ,
+doctor_share int,
 payment_method bit , -- credit card / cash
 payment_method_description varchar(50) ,
 credit_card_number varchar(16) , 
