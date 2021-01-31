@@ -129,11 +129,20 @@ education_degree int not null, --[1-3]
 specialty_description varchar(100) null,
 graduation_date date not null,
 university varchar(100) null,
+additional_info varchar(200) null,
+foreign key(department_ID) references Departments(department_ID)
+);
+
+create table DoctorContracts(
+doctorContract_ID int primary key,
+doctor_ID int,
 contract_start_date date not null,
 contract_end_date date not null,
 appointment_portion int not null,
+salary int not null,
+active bit not null,
 additional_info varchar(200) null,
-foreign key(department_ID) references Departments(department_ID)
+foreign key(doctor_ID) references Doctors(doctor_ID)
 );
 
 create table PatientIllnesses(
