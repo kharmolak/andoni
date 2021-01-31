@@ -30,7 +30,7 @@ agent_phone_number varchar(15) null,
 [address] varchar(200) null,
 additional_info varchar(200) null,
 active bit not null,
-active_description varchar(200) not null
+active_description varchar(12) not null check(active_description in ('Active','Not Active'))
 );
 
 create table Insurances(
@@ -85,7 +85,7 @@ special_illness bit not null, --0 for not special / 1 for special illnesses
 killing_status smallint not null,
 killing_description varchar(100) not null,
 chronic bit not null,
-chronic_description varchar(100) null,
+chronic_description varchar(15) not null check(chronic_description in ('chronic','Not chronic')),
 foreign key(illnessType_ID) references IllnessTypes(illnessType_ID)
 );
 
@@ -102,12 +102,6 @@ gender varchar(10) Check (gender in('Male','Female','Bi_sexual')),
 phone_number varchar(15) null,
 postal_code varchar(12) null,
 [address] varchar(200) null,
-job varchar(50) null,
-education varchar(100) not null, 
-religion varchar(100) not null,
-nationality varchar(50) not null,
-marital_status bit not null,
-marital_status_description varchar(20) not null, -- 0 for single / 1 for married
 death_date date null,
 death_reason int null,
 additional_info varchar(200) null,
@@ -127,7 +121,7 @@ gender varchar(10) Check (gender in('Male','Female','Bi_sexual')),
 religion varchar(100) not null,
 nationality varchar(50) not null,
 marital_status bit not null,
-marital_status_description varchar(20) not null, -- 0 for single / 1 for married
+marital_status_description varchar(20) not null check(marital_status_description in ('single','married')), -- 0 for single / 1 for married
 phone_number varchar(15) null,
 postal_code varchar(12) null,
 [address] varchar(200) null,
@@ -168,7 +162,7 @@ postal_code varchar(12) null,
 religion varchar(100) not null,
 nationality varchar(50) not null,
 marital_status bit not null,
-marital_status_description varchar(20) not null, -- 0 for single / 1 for married
+marital_status_description varchar(20) not null check(marital_status_description in ('single','married')), -- 0 for single / 1 for married
 education_degree int not null,
 specialty_description varchar(100) null,
 graduation_date date not null,
@@ -227,7 +221,7 @@ credit_card_number varchar(16) null,
 payer varchar(50) not null,
 payer_phone_number varchar(15) null,
 checkout_status bit not null, -- for Installment payment
-additional_info varchar(MAX) null,
+additional_info varchar(200) null,
 foreign key(hospitalization_ID) references Hospitalization(hospitalization_ID)
 );
 
