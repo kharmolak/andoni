@@ -48,23 +48,27 @@ create table dimInsuranceCompanies(
 );
 
 create table dimInsurances(
-	insurance_ID						int primary key,
-	code										varchar(15), 
+	insurance_code					int primary key, -- surrogate key
+	insurance_ID						int,
+	code										varchar(15), --SCD2
 	insuranceCompany_ID			int,
 	insuranceCompany_name	varchar(75),
 	insurer									varchar(100),
 	insurer_phone_number		varchar(25),
 	additional_info						varchar(200),
-	expire_date							date,--SCD1
-	medicine_reduction				int,--SCD1
-	appointment1_reduction		int,--SCD1
-	appointment2_reduction		int,--SCD1
-	appointment3_reduction		int,--SCD1
-	hospitalization_reduction	int,--SCD1
-	surgery_reduction				int,--SCD1
-	test_reduction						int,--SCD1
-	dentistry_reduction				int,--SCD1
-	radiology_reduction			int,--SCD1
+	expire_date							date,
+	medicine_reduction				int,
+	appointment1_reduction		int,
+	appointment2_reduction		int,
+	appointment3_reduction		int,
+	hospitalization_reduction	int,
+	surgery_reduction				int,
+	test_reduction						int,
+	dentistry_reduction				int,
+	radiology_reduction			int,
+	[start_date]							date,
+    end_date								date,
+    current_flag							int,
 );
 
 create table dimPatients(
@@ -115,7 +119,7 @@ create table Pharmacy.dimMedicines(
     side_effects								varchar(200),
     purchase_price							int,--SCD2
 	sales_price								int,--SCD2
-	stock										int,--SCD3 --> SCD1 ?
+	stock										int, --SCD1
 	medicine_type							int, 
 	medicine_type_description		varchar(20),
 	medicineFactory_ID					int,
@@ -200,9 +204,9 @@ create table Clinic.dimDoctors(
 	postal_code							varchar(12),
 	[address]								varchar(200),
 	additional_info						varchar(200),
-	[start_date]								date,
-    end_date									date,
-    current_flag								int,
+	[start_date]							date,
+    end_date								date,
+    current_flag							int,
 );
 
 create table Clinic.dimIllnessTypes(
@@ -228,6 +232,8 @@ create table Clinic.dimIllnesses(
 /***********************************Facts*********************************/
 create table Pharmacy.factTransactionalMedicine(
     patient_ID							int,
+	insurance_code					int, -- surrogate key
+	insurance_ID						int, --natural key
     insuranceCompany_ID			int,
     medicine_code					int, --surrogate key
     medicine_ID							int, --natural key
@@ -235,7 +241,6 @@ create table Pharmacy.factTransactionalMedicine(
     TimeKey								int,
 	----------------------------------
     number_of_units_bought	int,
-	-- bought_dose						int,
     paid_price							int,
 	real_price								int,
 	insurance_credit					int,
@@ -251,7 +256,6 @@ create table Pharmacy.factMonthlyMedicine(
     TimeKey									int,
 	-------------------------------------
     total_number_bought				int,
-	-- total_bought_dose					int,
     total_paid_price						int,
 	total_real_price						int,
 	total_insurance_credit				int,
@@ -267,7 +271,6 @@ create table Pharmacy.factAccumulativeMedicine(
 	medicineFactory_ID					int,
 	-------------------------------------
     total_number_bought				int,
-	-- total_bought_dose					int,
     total_paid_price						int,
 	total_real_price						int,
 	total_insurance_credit				int,
@@ -279,6 +282,8 @@ create table Pharmacy.factAccumulativeMedicine(
 -------------------------------------------------------------
 create table Clinic.factTransactionAppointment (
     patient_ID						int,
+	insurance_code				int, -- surrogate key
+	insurance_ID					int, --natural key
     insuranceCompany_ID		int,
     doctor_ID							int,
 	department_ID					int,
@@ -326,7 +331,6 @@ create table factlessPatientIlnesses(
 	severity					int, --[1-5]
 	additional_info			varchar(200)
 );
-
 /*-----------------------------------------------
 ----------------------------------------------
 create table Hospital.factSurgeryTransaction(
