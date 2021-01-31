@@ -48,9 +48,8 @@ create table dimInsuranceCompanies(
 );
 
 create table dimInsurances(
-	insurance_code					int primary key, -- surrogate key
-	insurance_ID						int,
-	code										varchar(15), --SCD2
+	insurance_ID					int primary key, 
+	code							varchar(15), 
 	insuranceCompany_ID			int,
 	insuranceCompany_name	varchar(75),
 	insurer									varchar(100),
@@ -65,16 +64,14 @@ create table dimInsurances(
 	surgery_reduction				int,
 	test_reduction						int,
 	dentistry_reduction				int,
-	radiology_reduction			int,
-	[start_date]							date,
-    end_date								date,
-    current_flag							int,
+	radiology_reduction			int
 );
 
 create table dimPatients(
-    patient_ID							int primary key,
+	patient_code						int primary key,-- surrogate key
+    patient_ID							int ,
     national_code						varchar(15),
-	insurance_ID						int,
+	insurance_ID						int,--SCD2
     first_name							varchar(30),
     last_name							varchar(60),
     birthdate								date,
@@ -87,6 +84,9 @@ create table dimPatients(
 	postal_code							varchar(20),--SCD1
 	[address]								varchar(200),--SCD1
 	additional_info						varchar(200),
+	[start_date]							date,
+    end_date								date,
+    current_flag							int,
 );
 
 create table Pharmacy.dimMedicineFactories(
@@ -231,9 +231,9 @@ create table Clinic.dimIllnesses(
 
 /***********************************Facts*********************************/
 create table Pharmacy.factTransactionalMedicine(
-    patient_ID							int,
-	insurance_code					int, -- surrogate key
-	insurance_ID						int, --natural key
+	patient_code						int,-- surrogate key
+    patient_ID							int,--natural key
+	insurance_ID						int, 
     insuranceCompany_ID			int,
     medicine_code					int, --surrogate key
     medicine_ID							int, --natural key
@@ -281,9 +281,9 @@ create table Pharmacy.factAccumulativeMedicine(
 -------------------------------------------------------------
 -------------------------------------------------------------
 create table Clinic.factTransactionAppointment (
-    patient_ID						int,
-	insurance_code				int, -- surrogate key
-	insurance_ID					int, --natural key
+    patient_code						int,-- surrogate key
+    patient_ID							int,--natural key
+	insurance_ID						int, 
     insuranceCompany_ID		int,
     doctor_ID							int,
 	department_ID					int,
@@ -295,6 +295,21 @@ create table Clinic.factTransactionAppointment (
 	insurance_credit				int,
 	doctor_share					int,
 	income								int
+);
+
+create table Clinic.factDailyAppointment (
+	insuranceCompany_ID		int,
+    doctor_ID							int,
+	department_ID					int,
+	main_detected_illness		int,
+    TimeKey							int,
+	-------------------------------
+	total_paied_price				int,
+	total_real_price				int,
+	total_insurance_credit		int,
+	total_doctor_share			int,
+	total_income					int,
+	number_of_patient			int
 );
 
 create table Clinic.factMonthlyAppointment (
