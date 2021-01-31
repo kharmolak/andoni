@@ -32,14 +32,18 @@ create table dimInsuranceCompanies(
 	license_code					varchar(25),
 	phone_number				varchar(25),--SCD1
 	[address]							varchar(300),--SCD1
-	manager							varchar(100),--SCD3
-	agent								varchar(100),--SCD3
+	previous_manager			varchar(100),
+	manager_change_date	date,
+	current_manager				varchar(100),--SCD3
+	previous_agent				varchar(100),
+	agent_change_date			date,
+	current_agent					varchar(100),--SCD3
 	fax_number						varchar(25),--SCD1
 	website_address				varchar(200),
 	manager_phone_number varchar(25),--SCD1
 	agent_phone_number		varchar(25),--SCD1
 	additional_info					varchar(200),
-	active								bit,
+	active								bit,--SCD1
 	active_description			varchar(200)
 );
 
@@ -86,8 +90,12 @@ create table Pharmacy.dimMedicineFactories(
     [name]									varchar(75),
     license_code						varchar(25),
     phone_number					varchar(25),--SCD1
-	manager								varchar(100),--SCD3
-	agent									varchar(100),--SCD3
+	previous_manager				varchar(100),
+	manager_change_date		date,
+	current_manager					varchar(100),--SCD3
+	previous_agent					varchar(100),
+	agent_change_date				date,
+	current_agent						varchar(100),--SCD3
 	fax_number							varchar(25),--SCD1
 	website_address					varchar(200),
 	manager_phone_number	varchar(25),--SCD1
@@ -117,6 +125,8 @@ create table Pharmacy.dimMedicines(
     [start_date]								date,
     end_date									date,
     current_flag								int,
+	sales_purchase							bit, -- 0 -> sales / 1 -> purchase
+	sales_purchase_description		varchar(50)
 );
 
 create table dimDate (
@@ -149,8 +159,12 @@ create table Clinic.dimDepartments(
     department_ID						int primary key,
     [name]									varchar(30),
     [description]						varchar(300),
-	chairman								varchar(50),--SCD3
-	assistant								varchar(50),--SCD3
+	previous_chairman				varchar(100),
+	chairman_change_date		date,
+	current_chairman					varchar(100),--SCD3
+	previous_assistant				varchar(100),
+	assistant_change_date			date,
+	current_assistant					varchar(100),--SCD3
 	chairman_phone_number	varchar(15),--SCD1
 	assistant_phone_number		varchar(15),--SCD1
 	chairman_room					int,
@@ -161,7 +175,8 @@ create table Clinic.dimDepartments(
 );
 
 create table Clinic.dimDoctors(
-    doctor_ID								int primary key,
+	doctor_code						int primary key, -- surrogate key
+    doctor_ID								int,
     national_code						varchar(15),
     license_code						varchar(25),
     first_name							varchar(30),
@@ -185,13 +200,16 @@ create table Clinic.dimDoctors(
 	postal_code							varchar(12),
 	[address]								varchar(200),
 	additional_info						varchar(200),
+	[start_date]								date,
+    end_date									date,
+    current_flag								int,
 );
 
 create table Clinic.dimIllnessTypes(
 	illnessType_ID					int primary key,
-	[name]								varchar(50) not null,
-	[description]					varchar(200) null,
-	related_department_ID	int not null
+	[name]								varchar(50),
+	[description]					varchar(200),
+	related_department_ID	int
 );
 
 create table Clinic.dimIllnesses(
