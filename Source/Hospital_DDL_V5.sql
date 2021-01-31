@@ -325,6 +325,7 @@ main_detected_illness int not null,
 appointment_number int not null,
 appointment_date date not null,
 price int not null,
+doctor_share int not null,
 payment_method bit not null, -- credit card / cash
 payment_method_description varchar(50) not null,
 credit_card_number varchar(16) null, 
