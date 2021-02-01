@@ -5,45 +5,89 @@ Student Numbers	: 9637453, 9629373
 Semester					: fall 1399
 version						: 1
 ***************************************************************************/
-use HospitalDW
-go
+USE HospitalDW
+GO
 
-create or alter procedure dimInsuranceCompanies_FirstLoader
-	as
-	begin
-		begin try 
-			truncate table HospitalDW.dbo.dimInsuranceCompanies
-			insert into HospitalDW.dbo.InsuranceCompanies
-				SELECT [insuranceCompany_ID]
-			,[name]
-			,[license_code]
-			,[phone_number]
-			,[address]
-			FROM HospitalSA.dbo.InsuranceCompanies
-			insert into HospitalDW.dbo.InsuranceCompanies
-			values(-1,'Nothing','Nothing','Nothing','Nothing')
-			
+-- Dimensions First Loader Procedures
+CREATE OR ALTER PROCEDURE Clinic.dimDepartments_FirstLoader
+	AS
+	BEGIN
+		BEGIN TRY
+			TRUNCATE TABLE Clinic.dimDepartments
+
+			INSERT INTO Clinic.dimDepartments
+				VALUES(-1,'Unknown','Unknown','Unknown',
+					   NULL,'Unknown','Unknown',NULL,
+					   'Unknown','Unknown','Unknown',-1,
+					   -1,'Unknown',-1,'Unknown')
+
+			INSERT INTO Clinic.dimDepartments
+				SELECT 	[department_ID]
+						,[name]
+						,[description]
+						,NULL
+						,NULL
+						,[chairman]
+						,NULL
+						,NULL
+						,[assistant]
+						,[chairman_phone_number]
+						,[assistant_phone_number]
+						,[chairman_room]
+						,[assistant_room]
+						,[reception_phone_number]
+						,[budget]
+						,[additional_info]
+				FROM HospitalSA.dbo.Departments
 		---------------------------------------------------
-			insert into [dbo].[Logs]
+			INSERT INTO [dbo].[Logs]
 				([date]
 				,[table_name]
 				,[status]
-				,[text]
+				,[description]
 				,[affected_rows])
-			values
+			VALUES
 				(GETDATE()
-				,'InsuranceCompanies'
+				,'dimDepartments'
 				,1
 				,'inserting new values was successfull'
 				,@@ROWCOUNT)
-		end try
-		begin catch
+		END TRY
+		BEGIN CATCH
 			INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [text], [affected_rows])
 			VALUES (GETDATE(), 'InsuranceCompanies', 0, 'Error while inserting or updating', @@ROWCOUNT);
-			select ERROR_MESSAGE()
-		end catch
-	end
-go
+			SELECT ERROR_MESSAGE()
+		END CATCH
+	END
+GO
+
+CREATE OR ALTER PROCEDURE Clinic.dimDoctorContracts_FirstLoader
+	AS
+	BEGIN
+		BEGIN TRY
+			TRUNCATE TABLE Clinic.dimDoctorContracts
+
+			INSERT INTO Clinic.dimDoctorContracts
+				VALUES(-1,NULL,NULL,-1,-1,0,'Unknown')
+
+			INSERT INTO Clinic.dimDoctorContracts
+				SELECT 	[doctorContract_ID]
+						,[contract_start_date]
+						,[contract_end_date]
+						,[appointment_portion]
+						,[salary]
+						,[active]
+						,CASE
+							WHEN [active] = 0 THEN 'Not Active'
+							ELSE 'Active'
+						 END AS []
+						,[additional_info]
+
+		END TRY
+		BEGIN CATCH
+		END CATCH
+	END
+GO
 ---------------------------------------------
 ---------------------------------------------
 create or alter procedure dimInsuranceCompanies
