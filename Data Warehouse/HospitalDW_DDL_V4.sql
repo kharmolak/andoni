@@ -178,9 +178,20 @@ create table Clinic.dimDepartments(
 	additional_info						varchar(200)
 );
 
+create table Clinic.dimDoctorContracts(
+doctorContract_ID int primary key,
+contract_start_date date  ,
+contract_end_date date  ,
+appointment_portion int  ,
+salary int  ,
+active bit  ,
+additional_info varchar(200) 
+);
+
 create table Clinic.dimDoctors(
 	doctor_code						int primary key, -- surrogate key
     doctor_ID								int,
+	doctorContract_ID						int,--SCD2
     national_code						varchar(15),
     license_code						varchar(25),
     first_name							varchar(30),
@@ -207,6 +218,7 @@ create table Clinic.dimDoctors(
 	[start_date]							date,
     end_date								date,
     current_flag							int,
+	ContractDegree							bit-- 0 -> Contract / 1 -> Degree
 );
 
 create table Clinic.dimIllnessTypes(
@@ -261,7 +273,7 @@ create table Pharmacy.factMonthlyMedicine(
 	total_insurance_credit				int,
 	total_factory_share					int,
 	total_income							int,
-    number_of_patients_bought   int
+    number_of_patients_bought   int,
 );
 
 create table Pharmacy.factAccumulativeMedicine(
@@ -276,7 +288,10 @@ create table Pharmacy.factAccumulativeMedicine(
 	total_insurance_credit				int,
 	total_factory_share					int,
 	total_income							int,
-    number_of_patients_bought   int
+    number_of_patients_bought   int,
+	max_bought_per_month		int,
+	min_bought_per_month		int,
+	avg_bought_per_month		int
 );
 -------------------------------------------------------------
 -------------------------------------------------------------
@@ -288,6 +303,7 @@ create table Clinic.factTransactionAppointment (
     doctor_ID							int,
 	department_ID					int,
 	main_detected_illness		int,
+	illnessType_ID				int,
     TimeKey							int,
 	-------------------------------
     paid_price						int,
@@ -302,6 +318,7 @@ create table Clinic.factDailyAppointment (
     doctor_ID							int,
 	department_ID					int,
 	main_detected_illness		int,
+	illnessType_ID				int,
     TimeKey							int,
 	-------------------------------
 	total_paied_price				int,
@@ -323,7 +340,10 @@ create table Clinic.factMonthlyAppointment (
 	total_insurance_credit		int,
 	total_doctor_share			int,
 	total_income					int,
-	number_of_patient			int
+	number_of_patient			int,
+	max_visit_per_day			int,
+	min_visit_per_day			int,
+	avg_visit_per_day			int,
 );
 
 create table Clinic.factAccumulativeAppointment (
@@ -336,7 +356,10 @@ create table Clinic.factAccumulativeAppointment (
 	total_insurance_credit		int,
 	total_doctor_share			int,
 	total_income					int,
-	number_of_patient			int
+	number_of_patient			int,
+	max_visit_per_month			int,
+	min_visit_per_month			int,
+	avg_visit_per_month			int,
 );
 
 create table factlessPatientIlnesses(
