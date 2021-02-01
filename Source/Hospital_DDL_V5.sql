@@ -109,6 +109,16 @@ foreign key(insurance_ID) references Insurances(insurance_ID),
 foreign key(death_reason) references Illnesses(illness_ID)
 );
 
+create table DoctorContracts(
+doctorContract_ID int primary key,
+contract_start_date date not null,
+contract_end_date date not null,
+appointment_portion int not null,
+salary int not null,
+active bit not null,
+additional_info varchar(200) null
+);
+
 create table Doctors(
 doctor_ID int primary key,
 doctorContract_ID int not null,
@@ -131,18 +141,8 @@ specialty_description varchar(100) null,
 graduation_date date not null,
 university varchar(100) null,
 additional_info varchar(200) null,
-foreign key(department_ID) references Departments(department_ID)
-);
-
-create table DoctorContracts(
-doctorContract_ID int primary key,
-contract_start_date date not null,
-contract_end_date date not null,
-appointment_portion int not null,
-salary int not null,
-active bit not null,
-additional_info varchar(200) null,
-foreign key(doctor_ID) references Doctors(doctor_ID)
+foreign key(department_ID) references Departments(department_ID),
+foreign key(doctorContract_ID) references DoctorContracts(doctorContract_ID)
 );
 
 create table PatientIllnesses(
