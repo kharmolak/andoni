@@ -235,16 +235,17 @@ create table Clinic.dimIllnessTypes(
 go
 
 create table Clinic.dimIllnesses(
-	illness_ID					int primary key,
-	[name]						varchar(100),
-	illnessType_ID			int,
-	illnessType_name		varchar(50),
-	scientific_name		varchar(100),
-	special_illness			bit, --0 for not special / 1 for special illnesses
-	killing_status			smallint,
-	killing_description	varchar(100),
-	chronic						bit,
-	chronic_description varchar(100)
+	illness_ID								int primary key,
+	[name]									varchar(100),
+	illnessType_ID						int,
+	illnessType_name					varchar(50),
+	scientific_name					varchar(100),
+	special_illness						bit, --0 for not special / 1 for special illnesses
+	special_illness_description	varchar(50),
+	killing_status						smallint,
+	killing_description				varchar(100),
+	chronic									bit,
+	chronic_description				varchar(100)
 )
 go
 
