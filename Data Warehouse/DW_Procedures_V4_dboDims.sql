@@ -225,7 +225,7 @@ create or alter procedure dimInsurances_Loader
 	as
 	begin
 		begin try 
-			declare @source table(
+			/*declare @source table(
 				insurance_ID int , 
 				code varchar(15), 
 				insuranceCompany_ID	int,
@@ -244,11 +244,11 @@ create or alter procedure dimInsurances_Loader
 				dentistry_reduction	int,
 				radiology_reduction int
 			);
-			insert into @source
+			insert into @source*/
 			SELECT i.[insurance_ID]
 				,i.[code]
 				,i.[insuranceCompany_ID]
-				,c.[name] --insuranceCompany_name
+				,c.[name] as insuranceCompany_name
 				,i.[insurer]
 				,i.[insurer_phone_number]
 				,i.[additional_info]
@@ -261,11 +261,11 @@ create or alter procedure dimInsurances_Loader
 				,i.[surgery_reduction]
 				,i.[test_reduction]
 				,i.[dentistry_reduction]
-				,i.[radiology_reduction]
+				,i.[radiology_reduction] into #source
 			FROM HospitalSA.dbo.Insurances as i inner join HospitalSA.dbo.InsuranceCompanies as c on(i.insuranceCompany_ID=c.insuranceCompany_ID);
 
 			merge HospitalDW.dbo.dimInsurances as I
-			using @source as SA on
+			using #source as SA on
 			I.insurance_ID = SA.insurance_ID
 
 			when not matched then 
