@@ -22,34 +22,32 @@ go
 
 create schema Clinic
 go
-
---create schema Hospitalization
---go
 /********************************Dimensions*****************************/
 create table dimInsuranceCompanies(
-	insuranceCompany_ID		int primary key,
-	[name]								varchar(75),
-	license_code					varchar(25),
-	phone_number				varchar(25),--SCD1
-	[address]							varchar(300),--SCD1
-	previous_manager			varchar(100),
-	manager_change_date	date,
-	current_manager				varchar(100),--SCD3
-	previous_agent				varchar(100),
-	agent_change_date			date,
-	current_agent					varchar(100),--SCD3
-	fax_number						varchar(25),--SCD1
-	website_address				varchar(200),
-	manager_phone_number varchar(25),--SCD1
-	agent_phone_number		varchar(25),--SCD1
-	additional_info					varchar(200),
-	active								bit,--SCD1
-	active_description			varchar(200)
-);
+	insuranceCompany_ID			int primary key,
+	[name]									varchar(75),
+	license_code						varchar(25),
+	phone_number					varchar(25),--SCD1
+	[address]								varchar(300),--SCD1
+	previous_manager				varchar(100),
+	manager_change_date		date,
+	current_manager					varchar(100),--SCD3
+	previous_agent					varchar(100),
+	agent_change_date				date,
+	current_agent						varchar(100),--SCD3
+	fax_number							varchar(25),--SCD1
+	website_address					varchar(200),
+	manager_phone_number	varchar(25),--SCD1
+	agent_phone_number			varchar(25),--SCD1
+	additional_info						varchar(200),
+	active									bit,--SCD1
+	active_description				varchar(200)
+)
+go
 
 create table dimInsurances(
-	insurance_ID					int primary key, 
-	code							varchar(15), 
+	insurance_ID						int primary key, 
+	code										varchar(15), 
 	insuranceCompany_ID			int,
 	insuranceCompany_name	varchar(75),
 	insurer									varchar(100),
@@ -65,7 +63,8 @@ create table dimInsurances(
 	test_reduction						int,
 	dentistry_reduction				int,
 	radiology_reduction			int
-);
+)
+go
 
 create table dimPatients(
 	patient_code						int primary key,-- surrogate key
@@ -87,7 +86,8 @@ create table dimPatients(
 	[start_date]							date,
     end_date								date,
     current_flag							int,
-);
+)
+go
 
 create table Pharmacy.dimMedicineFactories(
     medicineFactory_ID				int primary key,
@@ -108,7 +108,8 @@ create table Pharmacy.dimMedicineFactories(
 	additional_info						varchar(200),
 	active									bit,
 	active_description				varchar(200)
-);
+)
+go
 
 create table Pharmacy.dimMedicines(
     medicine_code						int identity(1,1) primary key, --surrogate key
@@ -131,7 +132,8 @@ create table Pharmacy.dimMedicines(
     current_flag								int,
 	sales_purchase							bit, -- 0 -> sales / 1 -> purchase
 	sales_purchase_description		varchar(50)
-);
+)
+go
 
 create table dimDate (
     TimeKey										int primary key,
@@ -157,7 +159,8 @@ create table dimDate (
     PersianCalendarYear					int,
     CalendarSemester						int,
     PersianCalendarSemester			int
-);
+)
+go
 
 create table Clinic.dimDepartments(
     department_ID						int primary key,
@@ -176,22 +179,24 @@ create table Clinic.dimDepartments(
 	reception_phone_number	varchar(15),--SCD1
 	budget									int,
 	additional_info						varchar(200)
-);
+)
+go
 
 create table Clinic.dimDoctorContracts(
-doctorContract_ID int primary key,
-contract_start_date date  ,
-contract_end_date date  ,
-appointment_portion int  ,
-salary int  ,
-active bit  ,
-additional_info varchar(200) 
-);
+	doctorContract_ID			int primary key,
+	contract_start_date			date,
+	contract_end_date			date,
+	appointment_portion		int,
+	salary								int,
+	active								bit,
+	additional_info					varchar(200) 
+)
+go
 
 create table Clinic.dimDoctors(
 	doctor_code						int primary key, -- surrogate key
     doctor_ID								int,
-	doctorContract_ID						int,--SCD2
+	doctorContract_ID				int,--SCD2
     national_code						varchar(15),
     license_code						varchar(25),
     first_name							varchar(30),
@@ -204,7 +209,7 @@ create table Clinic.dimDoctors(
 	specialty_description			varchar(100),
 	graduation_date					date,
 	university								varchar(100),
-	contract_start_date				date, ---?
+	contract_start_date				date, 
 	contract_end_date				date,
 	appointment_portion			int,
 	gender									varchar(10),
@@ -218,15 +223,17 @@ create table Clinic.dimDoctors(
 	[start_date]							date,
     end_date								date,
     current_flag							int,
-	ContractDegree							bit-- 0 -> Contract / 1 -> Degree
-);
+	ContractDegree					bit-- 0 -> Contract / 1 -> Degree
+)
+go
 
 create table Clinic.dimIllnessTypes(
 	illnessType_ID					int primary key,
 	[name]								varchar(50),
 	[description]					varchar(200),
 	related_department_ID	int
-);
+)
+go
 
 create table Clinic.dimIllnesses(
 	illness_ID					int primary key,
@@ -239,7 +246,8 @@ create table Clinic.dimIllnesses(
 	killing_description	varchar(100),
 	chronic						bit,
 	chronic_description varchar(100)
-);
+)
+go
 
 /***********************************Facts*********************************/
 create table Pharmacy.factTransactionalMedicine(
@@ -258,7 +266,8 @@ create table Pharmacy.factTransactionalMedicine(
 	insurance_credit					int,
 	factory_share						int,
 	income									int,
-);
+)
+go
 
 create table Pharmacy.factMonthlyMedicine(
 	insuranceCompany_ID				int,
@@ -274,7 +283,8 @@ create table Pharmacy.factMonthlyMedicine(
 	total_factory_share					int,
 	total_income							int,
     number_of_patients_bought   int,
-);
+)
+go
 
 create table Pharmacy.factAccumulativeMedicine(
 	insuranceCompany_ID				int,
@@ -289,21 +299,22 @@ create table Pharmacy.factAccumulativeMedicine(
 	total_factory_share					int,
 	total_income							int,
     number_of_patients_bought   int,
-	max_bought_per_month		int,
-	min_bought_per_month		int,
-	avg_bought_per_month		int
-);
+	max_bought_per_month			int,
+	min_bought_per_month			int,
+	avg_bought_per_month			int
+)
+go
 -------------------------------------------------------------
 -------------------------------------------------------------
 create table Clinic.factTransactionAppointment (
-    patient_code						int,-- surrogate key
-    patient_ID							int,--natural key
-	insurance_ID						int, 
+    patient_code					int,-- surrogate key
+    patient_ID						int,--natural key
+	insurance_ID					int, 
     insuranceCompany_ID		int,
     doctor_ID							int,
 	department_ID					int,
 	main_detected_illness		int,
-	illnessType_ID				int,
+	illnessType_ID					int,
     TimeKey							int,
 	-------------------------------
     paid_price						int,
@@ -311,14 +322,15 @@ create table Clinic.factTransactionAppointment (
 	insurance_credit				int,
 	doctor_share					int,
 	income								int
-);
+)
+go
 
 create table Clinic.factDailyAppointment (
 	insuranceCompany_ID		int,
     doctor_ID							int,
 	department_ID					int,
 	main_detected_illness		int,
-	illnessType_ID				int,
+	illnessType_ID					int,
     TimeKey							int,
 	-------------------------------
 	total_paied_price				int,
@@ -327,7 +339,8 @@ create table Clinic.factDailyAppointment (
 	total_doctor_share			int,
 	total_income					int,
 	number_of_patient			int
-);
+)
+go
 
 create table Clinic.factMonthlyAppointment (
 	insuranceCompany_ID		int,
@@ -343,8 +356,9 @@ create table Clinic.factMonthlyAppointment (
 	number_of_patient			int,
 	max_visit_per_day			int,
 	min_visit_per_day			int,
-	avg_visit_per_day			int,
-);
+	avg_visit_per_day				int,
+)
+go
 
 create table Clinic.factAccumulativeAppointment (
     insuranceCompany_ID		int,
@@ -357,10 +371,11 @@ create table Clinic.factAccumulativeAppointment (
 	total_doctor_share			int,
 	total_income					int,
 	number_of_patient			int,
-	max_visit_per_month			int,
-	min_visit_per_month			int,
-	avg_visit_per_month			int,
-);
+	max_visit_per_month		int,
+	min_visit_per_month		int,
+	avg_visit_per_month		int,
+)
+go
 
 create table factlessPatientIlnesses(
 	patient_ID				int,
@@ -368,95 +383,13 @@ create table factlessPatientIlnesses(
 	[detection_date]		date,
 	severity					int, --[1-5]
 	additional_info			varchar(200)
-);
-/*-----------------------------------------------
-----------------------------------------------
-create table Hospital.factSurgeryTransaction(
-    doctor_code						int,
-    patient_code						int,
-    insuranceCompany_code    int,
-    start_date								int,
-    end_date								int,
-    price										int not null,
-    [status]									int not null,
-    department_code				int
-);
+)
+go
 
-create table Hospital.factSurgerySnapshot(
-    doctor_code									int,
-    department_code							int,
-    TimeKey											int,
-    total_price										int not null,
-    number_of_surgeries						int,
-    number_of_successful_surgeries		int,
-    number_of_failed_surgeries				int
-);
-
-create table Hospital.factSurgeryAccumulative(
-    doctor_code									int,
-    department_code							int,
-    total_price										int not null,
-    number_of_surgeries						int,
-    number_of_successful_surgeries		int,
-    number_of_failed_surgeries				int
-);
-
-create table Hospital.factHospitalTransaction(
-    doctor_code						int,
-    patient_code						int,
-    insuranceCompany_code	int,
-    department_code				int,
-    admit_date							int not null,
-    discharg_date						int not null,
-    room_number						int null,
-    daily_price							int not null,
-    total_price							int not null,
-    hospitalization_days			int
-);
-
-create table Hospital.factHospitalSnapshot(
-    doctor_code						int,
-    department_code				int,
-    TimeKey								int not null,
-    total_patients_in_hospital	int,
-    patients_discharged			int,
-    patients_in_hospital				int,
-    total_price							int not null
-);
-
-create table Hospital.factHospitalAccumulative(
-    doctor_code						int,
-    department_code				int,
-    total_patients_in_hospital	int,
-    patients_discharged			int,
-    patients_in_hospital				int,
-    total_price							int not null
-);*/
------------------------------------------------
-----------------------------------------------
-/*create table Hospital.SurgeryStatus(
-    status_ID			int primary key,
-    [description]	varchar(100)
-);*/
-
---create table Clinic.AppointmentStatus(
---    status_ID			int primary key,
---    [description]	varchar(100)
---);
-
-/*insert into Hospital.SurgeryStatus values
-    (0,'Not Successful'),
-    (1,'Successful');
-*/
---insert into Clinic.AppointmentStatus values
---    (0,'Canceled'),
---    (1,'Done');
------------------------------------------------
-----------------------------------------------
 create table Logs(
     [date]				datetime,
     table_name     varchar(50),
     [status]				bit,
     [description]	varchar(500),
     affected_rows  int,
-);
+)
