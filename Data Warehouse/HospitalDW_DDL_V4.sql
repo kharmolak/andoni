@@ -222,7 +222,7 @@ create table Clinic.dimDoctors(
     end_date									date,
     current_flag								int,
 	ContractDegree						bit,-- 0 -> Contract / 1 -> Degree
-	ContractDegree_description	bit
+	ContractDegree_description	varchar(50)
 )
 go
 
