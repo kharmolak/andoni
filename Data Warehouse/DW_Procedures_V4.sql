@@ -414,39 +414,43 @@ create or alter procedure  factMedicineTransaction_FirstLoader
 			declare @end_date date;
 			declare @tmp_order table(
 				medicineOrderHeader_ID int ,
-				patient_ID int,
+				patient_ID int
+			);
+			declare @active_patient table(
+				patient_code int,
+				patient_ID int ,
+				insurance_ID int,
 				insuranceCompany_ID int
+			);
+			declare @active_medicine table(
+				medicine_code int,
+				medicine_ID int,
+				medicineFactory_ID int
 			);
 			declare @tmp_grouped table(
 				medicineOrderHeader_ID int, 
-				medicine_ID int,
-				total_count int,
-				total_price int
-			);
-			declare @tmp_grouped_factory table(
-				medicineOrderHeader_ID int, 
-				medicine_ID int,
-				medicineFactory_ID int,
-				total_count int,
-				total_price int
-			);
-			declare @tmp_medicine_surrogate_key table(
-				medicineOrderHeader_ID int, 
-				medicine_code int,
-				medicine_ID int,
-				medicineFactory_ID int,
-				total_count int,
-				total_price int
-			);
-			declare @tmp_patient_insurance table(
 				patient_ID int,
-				insuranceCompany_ID int
+				medicine_ID int,
+				total_count int,
+				paid_price int,
+				total_price int,
+				insurance_credit int,
+				factory_share int,
+				income int
 			);
-
-			--InsuranceCompany*Patient
-			insert into @tmp_patient_insurance
-			select p.patient_ID,i.insuranceCompany_ID
-			from HospitalSA.dbo.Insurances as i inner join HospitalSA.dbo.Patients as p on (i.insurance_ID=p.insurance_ID);
+			declare @tmp_grouped_medicine table(
+				medicineOrderHeader_ID int,
+				patient_ID int,
+				medicine_code int, 
+				medicine_ID int,
+				medicineFactory_ID int,
+				total_count int,
+				paid_price int,
+				total_price int,
+				insurance_credit int,
+				factory_share int,
+				income int
+			);
 
 			--set end_date and current_date
 			set @end_date=(
@@ -464,52 +468,57 @@ create or alter procedure  factMedicineTransaction_FirstLoader
 					--find TimeKey
 					set @temp_cur_datekey=(
 						select TimeKey
-						from dbo.[Date]
+						from dbo.dimDate
 						where FullDateAlternateKey=@temp_cur_date
 					);
-					--read this day OrderHeader and then finding insuranceCompany ID
-					with a as (
+					--active patient and insurance and company
+					insert into @active_patient
+					select p.patient_code,p.patient_ID,p.insurance_ID,i.insuranceCompany_ID
+					from dimPatients as p inner join dimInsurances as i on(p.insurance_ID=i.insurance_ID)
+					where p.[start_date] <= @temp_cur_date and (p.current_flag=1 or p.end_date>@temp_cur_date);
+
+					--active medicine and factory
+					insert into @active_medicine
+					select medicine_code,medicine_ID,medicineFactory_ID
+					from Pharmacy.dimMedicines
+					where [start_date] <= @temp_cur_date and (current_flag=1 or end_date>@temp_cur_date);
+
+					--read this day OrderHeader 
+					insert into @tmp_order
 					select o.medicineOrderHeader_ID, isnull(o.patient_ID,-1)as patient_ID
 					from HospitalSA.dbo.MedicineOrderHeaders as o
 					where order_date=@temp_cur_date
-					)
-					insert into @tmp_order
-					select o.medicineOrderHeader_ID, o.patient_ID, isnull(i.insuranceCompany_ID,-1)
-					from a as o left join @tmp_patient_insurance as i on(o.patient_ID=i.patient_ID)
-
+					
 					--find this day OrderDetails and group by header_ID and Medicine_ID
 					insert  into @tmp_grouped
-					select tmp.medicineOrderHeader_ID, src.medicine_ID,sum( src.[count]), sum(src.unit_price*src.[count])
+					select tmp.medicineOrderHeader_ID,tmp.patient_ID ,isnull(src.medicine_ID,-1),sum( src.[count]), sum((src.unit_price-src.insurance_portion)*src.[count]),sum(src.unit_price*src.[count]),sum(src.insurance_portion*src.[count]),sum(src.purchase_unit_price*src.[count]),sum((src.unit_price-src.purchase_unit_price)*src.[count])
 					from @tmp_order as tmp inner join HospitalSA.dbo.MedicineOrderDetails as src on (tmp.medicineOrderHeader_ID=src.medicineOrderHeader_ID)
-					group by tmp.medicineOrderHeader_ID, src.medicine_ID;
+					group by tmp.medicineOrderHeader_ID,tmp.patient_ID, src.medicine_ID;
 
-					--finding medicine factory key
-					insert into @tmp_grouped_factory
-					select g.medicineOrderHeader_ID,g.medicine_ID,isnull(f.medicineFactory_ID,-1),g.total_count,g.total_price
-					from @tmp_grouped as g inner join HospitalSA.dbo.Medicines as f on (g.medicine_ID=f.medicine_ID)
+					--delete @tmp_order
+					delete from @tmp_order;
+
+					--finding medicine keys
+					insert into @tmp_grouped_medicine
+					select g.medicineOrderHeader_ID,g.patient_ID,m.medicine_code,g.medicine_ID,m.medicineFactory_ID,g.total_count,g.paid_price,g.total_price,g.insurance_credit,g.factory_share,g.income
+					from @tmp_grouped as g inner join @active_medicine as m on (g.medicine_ID=m.medicine_ID)
 
 					--delete @tmp_grouped
 					delete from @tmp_grouped;
 
-					--finding medicine sarrugate key
-					insert into @tmp_medicine_surrogate_key
-					select g.medicineOrderHeader_ID,isnull( m.medicine_code,-1),g.medicine_ID,g.medicineFactory_ID,g.total_count, g.total_price
-					from @tmp_grouped_factory as g left join Pharmacy.Medicines as m on(g.medicine_ID=m.medicine_ID)
-					where m.[start_date] <= @temp_cur_date and (m.current_flag=1 or m.end_date>@temp_cur_date);
+					--delete @active_medicine
+					delete from @active_medicine;
 
-					--delete @tmp_grouped_factory
-					delete from @tmp_grouped_factory;
+					--finding patient keys and insert to fact
+					insert into Pharmacy.factTransactionalMedicine
+					select a.patient_code,a.patient_ID,a.insurance_ID,a.insuranceCompany_ID,m.medicine_code,m.medicine_ID,m.medicineFactory_ID,@temp_cur_datekey,m.total_count,m.paid_price,m.total_price,m.insurance_credit,m.factory_share,m.income
+					from @tmp_grouped_medicine as m inner join @active_patient as a on(m.patient_ID=a.patient_ID)
 
-					--insert to MedicineTransactionFact
-					insert into Pharmacy.MedicineTransactionFact
-					select o.patient_ID,o.insuranceCompany_ID,m.medicine_code,m.medicine_ID,m.medicineFactory_ID,@temp_cur_datekey,m.total_count,m.total_price
-					from @tmp_medicine_surrogate_key as m inner join @tmp_order as o on(m.medicineOrderHeader_ID=o.medicineOrderHeader_ID);
+					--delete @tmp_grouped_medicine
+					delete from @tmp_grouped_medicine;
 
-					--delete @tmp_medicine_surrogate_key
-					delete from @tmp_medicine_surrogate_key;
-
-					--delete @tmp_order_sarrogate
-					delete from @tmp_order;
+					--delete @active_patient
+					delete from @active_patient;
 
 					insert into Logs values
 					(GETDATE(),'Pharmacy.MedicineTransactionFact',1,'Transactions of '+convert(varchar,@temp_cur_date)+' inserted',@@ROWCOUNT);
@@ -545,39 +554,43 @@ create or alter procedure  factMedicineTransaction
 			declare @end_date date;
 			declare @tmp_order table(
 				medicineOrderHeader_ID int ,
-				patient_ID int,
+				patient_ID int
+			);
+			declare @active_patient table(
+				patient_code int,
+				patient_ID int ,
+				insurance_ID int,
 				insuranceCompany_ID int
+			);
+			declare @active_medicine table(
+				medicine_code int,
+				medicine_ID int,
+				medicineFactory_ID int
 			);
 			declare @tmp_grouped table(
 				medicineOrderHeader_ID int, 
-				medicine_ID int,
-				total_count int,
-				total_price int
-			);
-			declare @tmp_grouped_factory table(
-				medicineOrderHeader_ID int, 
-				medicine_ID int,
-				medicineFactory_ID int,
-				total_count int,
-				total_price int
-			);
-			declare @tmp_medicine_surrogate_key table(
-				medicineOrderHeader_ID int, 
-				medicine_code int,
-				medicine_ID int,
-				medicineFactory_ID int,
-				total_count int,
-				total_price int
-			);
-			declare @tmp_patient_insurance table(
 				patient_ID int,
-				insuranceCompany_ID int
+				medicine_ID int,
+				total_count int,
+				paid_price int,
+				total_price int,
+				insurance_credit int,
+				factory_share int,
+				income int
 			);
-
-			--InsuranceCompany*Patient
-			insert into @tmp_patient_insurance
-			select p.patient_ID,i.insuranceCompany_ID
-			from HospitalSA.dbo.Insurances as i inner join HospitalSA.dbo.Patients as p on (i.insurance_ID=p.insurance_ID);
+			declare @tmp_grouped_medicine table(
+				medicineOrderHeader_ID int,
+				patient_ID int,
+				medicine_code int, 
+				medicine_ID int,
+				medicineFactory_ID int,
+				total_count int,
+				paid_price int,
+				total_price int,
+				insurance_credit int,
+				factory_share int,
+				income int
+			);
 
 			--set end_date and current_date
 			set @end_date=(
@@ -586,66 +599,70 @@ create or alter procedure  factMedicineTransaction
 			);
 			set @temp_cur_datekey=(
 				select max(TimeKey)
-				from Pharmacy.MedicineTransactionFact
+				from Pharmacy.factTransactionalMedicine
 			);
 			set @temp_cur_date=(
 				select dateadd(day,1,FullDateAlternateKey)
-				from dbo.[Date]
+				from dbo.dimDate
 				where TimeKey=@temp_cur_datekey
 			);
 
-			--loop in days
 			while @temp_cur_date<@end_date begin
 				begin try
 					--find TimeKey
 					set @temp_cur_datekey=(
 						select TimeKey
-						from dbo.[Date]
+						from dbo.dimDate
 						where FullDateAlternateKey=@temp_cur_date
 					);
-					--read this day OrderHeader and then finding insuranceCompany ID
-					with a as (
+					--active patient and insurance and company
+					insert into @active_patient
+					select p.patient_code,p.patient_ID,p.insurance_ID,i.insuranceCompany_ID
+					from dimPatients as p inner join dimInsurances as i on(p.insurance_ID=i.insurance_ID)
+					where p.[start_date] <= @temp_cur_date and (p.current_flag=1 or p.end_date>@temp_cur_date);
+
+					--active medicine and factory
+					insert into @active_medicine
+					select medicine_code,medicine_ID,medicineFactory_ID
+					from Pharmacy.dimMedicines
+					where [start_date] <= @temp_cur_date and (current_flag=1 or end_date>@temp_cur_date);
+
+					--read this day OrderHeader 
+					insert into @tmp_order
 					select o.medicineOrderHeader_ID, isnull(o.patient_ID,-1)as patient_ID
 					from HospitalSA.dbo.MedicineOrderHeaders as o
 					where order_date=@temp_cur_date
-					)
-					insert into @tmp_order
-					select o.medicineOrderHeader_ID, o.patient_ID, isnull(i.insuranceCompany_ID,-1)
-					from a as o left join @tmp_patient_insurance as i on(o.patient_ID=i.patient_ID)
-
+					
 					--find this day OrderDetails and group by header_ID and Medicine_ID
 					insert  into @tmp_grouped
-					select tmp.medicineOrderHeader_ID, src.medicine_ID,sum( src.[count]), sum(src.unit_price*src.[count])
+					select tmp.medicineOrderHeader_ID,tmp.patient_ID ,isnull(src.medicine_ID,-1),sum( src.[count]), sum((src.unit_price-src.insurance_portion)*src.[count]),sum(src.unit_price*src.[count]),sum(src.insurance_portion*src.[count]),sum(src.purchase_unit_price*src.[count]),sum((src.unit_price-src.purchase_unit_price)*src.[count])
 					from @tmp_order as tmp inner join HospitalSA.dbo.MedicineOrderDetails as src on (tmp.medicineOrderHeader_ID=src.medicineOrderHeader_ID)
-					group by tmp.medicineOrderHeader_ID, src.medicine_ID;
+					group by tmp.medicineOrderHeader_ID,tmp.patient_ID, src.medicine_ID;
 
-					--finding medicine factory key
-					insert into @tmp_grouped_factory
-					select g.medicineOrderHeader_ID,g.medicine_ID,isnull(f.medicineFactory_ID,-1),g.total_count,g.total_price
-					from @tmp_grouped as g inner join HospitalSA.dbo.Medicines as f on (g.medicine_ID=f.medicine_ID)
+					--delete @tmp_order
+					delete from @tmp_order;
+
+					--finding medicine keys
+					insert into @tmp_grouped_medicine
+					select g.medicineOrderHeader_ID,g.patient_ID,m.medicine_code,g.medicine_ID,m.medicineFactory_ID,g.total_count,g.paid_price,g.total_price,g.insurance_credit,g.factory_share,g.income
+					from @tmp_grouped as g inner join @active_medicine as m on (g.medicine_ID=m.medicine_ID)
 
 					--delete @tmp_grouped
 					delete from @tmp_grouped;
 
-					--finding medicine sarrugate key
-					insert into @tmp_medicine_surrogate_key
-					select g.medicineOrderHeader_ID,isnull( m.medicine_code,-1),g.medicine_ID,g.medicineFactory_ID,g.total_count, g.total_price
-					from @tmp_grouped_factory as g left join Pharmacy.Medicines as m on(g.medicine_ID=m.medicine_ID)
-					where m.[start_date] <= @temp_cur_date and (m.current_flag=1 or m.end_date>@temp_cur_date);
+					--delete @active_medicine
+					delete from @active_medicine;
 
-					--delete @tmp_grouped_factory
-					delete from @tmp_grouped_factory;
+					--finding patient keys and insert to fact
+					insert into Pharmacy.factTransactionalMedicine
+					select a.patient_code,a.patient_ID,a.insurance_ID,a.insuranceCompany_ID,m.medicine_code,m.medicine_ID,m.medicineFactory_ID,@temp_cur_datekey,m.total_count,m.paid_price,m.total_price,m.insurance_credit,m.factory_share,m.income
+					from @tmp_grouped_medicine as m inner join @active_patient as a on(m.patient_ID=a.patient_ID)
 
-					--insert to MedicineTransactionFact
-					insert into Pharmacy.MedicineTransactionFact
-					select o.patient_ID,o.insuranceCompany_ID,m.medicine_code,m.medicine_ID,m.medicineFactory_ID,@temp_cur_datekey,m.total_count,m.total_price
-					from @tmp_medicine_surrogate_key as m inner join @tmp_order as o on(m.medicineOrderHeader_ID=o.medicineOrderHeader_ID);
+					--delete @tmp_grouped_medicine
+					delete from @tmp_grouped_medicine;
 
-					--delete @tmp_medicine_surrogate_key
-					delete from @tmp_medicine_surrogate_key;
-
-					--delete @tmp_order_sarrogate
-					delete from @tmp_order;
+					--delete @active_patient
+					delete from @active_patient;
 
 					insert into Logs values
 					(GETDATE(),'Pharmacy.MedicineTransactionFact',1,'Transactions of '+convert(varchar,@temp_cur_date)+' inserted',@@ROWCOUNT);
