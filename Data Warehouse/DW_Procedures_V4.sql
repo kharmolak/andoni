@@ -46,7 +46,6 @@ create or alter procedure dimInsuranceCompanies_FirstLoader
 go
 ---------------------------------------------
 ---------------------------------------------
-
 create or alter procedure dimInsuranceCompanies
 	as 
 	begin
@@ -126,10 +125,8 @@ create or alter procedure Pharmacy.dimMedicineFactory
 	end catch
 	end
 go
-
 ------------------------------------------------------
 ------------------------------------------------------
-
 create or alter procedure Pharmacy.dimMedicineFactory_FirstLoader
 	as
 	begin
@@ -165,10 +162,8 @@ create or alter procedure Pharmacy.dimMedicineFactory_FirstLoader
 		end catch
 	end
 go
-
 ------------------------------------------------------
 ------------------------------------------------------
-
 CREATE OR ALTER PROCEDURE dimPatients_FirstLoader
 	AS 
 	BEGIN
@@ -220,10 +215,8 @@ CREATE OR ALTER PROCEDURE dimPatients_FirstLoader
 		END CATCH
 	END
 GO
-
 ------------------------------------------------------
 ------------------------------------------------------
-
 CREATE OR ALTER PROCEDURE dimPatients
 	AS 
 	BEGIN 
@@ -273,10 +266,8 @@ CREATE OR ALTER PROCEDURE dimPatients
 		END CATCH
 	END
 GO
-
 ------------------------------------------------------
 ------------------------------------------------------
-
 CREATE OR ALTER PROCEDURE Pharmacy.dimMedicines_FirstLoader @curr_date DATE
 	AS 
 	BEGIN
@@ -328,10 +319,8 @@ CREATE OR ALTER PROCEDURE Pharmacy.dimMedicines_FirstLoader @curr_date DATE
 		END CATCH
 	END
 GO
-
 ------------------------------------------------------
 ------------------------------------------------------
-
 CREATE OR ALTER PROCEDURE Pharmacy.dimMedicines @curr_date DATE
 	AS 
 	BEGIN
@@ -401,10 +390,8 @@ CREATE OR ALTER PROCEDURE Pharmacy.dimMedicines @curr_date DATE
 		END CATCH
 	END
 GO
-
 ------------------------------------------------------
 ------------------------------------------------------
-
 create or alter procedure  factMedicineTransaction_FirstLoader 
 	as 
 	begin
@@ -541,10 +528,8 @@ create or alter procedure  factMedicineTransaction_FirstLoader
 		end catch
 	end
 go
-
 ------------------------------------------------------
 ------------------------------------------------------
-
 create or alter procedure  factMedicineTransaction
 	as 
 	begin
@@ -685,10 +670,8 @@ create or alter procedure  factMedicineTransaction
 		end catch
 	end
 go
-
 ------------------------------------------------------
 ------------------------------------------------------
-
 CREATE OR ALTER PROCEDURE [Pharmacy].uspFirstLoader
 	AS
 	BEGIN 
@@ -735,10 +718,8 @@ CREATE OR ALTER PROCEDURE [Pharmacy].uspFirstLoader
 		END CATCH
 	END
 GO
- 
 ------------------------------------------------------
 ------------------------------------------------------
-
  CREATE OR ALTER PROCEDURE [Pharmacy].uspUsaual
 	AS 
 	BEGIN
