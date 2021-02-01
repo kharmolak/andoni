@@ -111,6 +111,7 @@ foreign key(death_reason) references Illnesses(illness_ID)
 
 create table Doctors(
 doctor_ID int primary key,
+doctorContract_ID int not null,
 department_ID int not null,
 national_code varchar(10) not null,
 license_code varchar(15) not null,
@@ -135,7 +136,6 @@ foreign key(department_ID) references Departments(department_ID)
 
 create table DoctorContracts(
 doctorContract_ID int primary key,
-doctor_ID int,
 contract_start_date date not null,
 contract_end_date date not null,
 appointment_portion int not null,
