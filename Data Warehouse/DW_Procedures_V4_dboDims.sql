@@ -436,7 +436,7 @@ CREATE OR ALTER PROCEDURE dimPatients_Loader @curr_date date
 						death_date = Source.death_date,
 						death_reason = Source.death_reason,
 						end_date= case
-							when [Target].insurance_ID<>Source.insurance_ID and [Target].current_flag==1 then @curr_date
+							when [Target].insurance_ID<>Source.insurance_ID and [Target].current_flag=1 then @curr_date
 							else end_date
 						end,
 						current_flag =  case
