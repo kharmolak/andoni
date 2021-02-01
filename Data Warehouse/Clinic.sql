@@ -25,6 +25,7 @@
 --	appointment_portion		int,
 --	salary								int,
 --	active								bit,
+--  active_description                  varchar(50),
 --	additional_info					varchar(200) 
 --)
 --go
@@ -45,9 +46,6 @@
 --	specialty_description			varchar(100),
 --	graduation_date					date,
 --	university								varchar(100),
---	contract_start_date				date, 
---	contract_end_date				date,
---	appointment_portion			int,
 --	gender									varchar(10),
 --	religion								varchar(100),
 --	nationality							varchar(50),
@@ -60,6 +58,7 @@
 -- end_date								date,
 -- current_flag							int,
 --	ContractDegree					bit-- 0 -> Contract / 1 -> Degree
+--	ContractDegree_description					varchar(50)
 --)
 --go
 

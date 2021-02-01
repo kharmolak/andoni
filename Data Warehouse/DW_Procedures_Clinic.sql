@@ -8,6 +8,9 @@ version						: 1
 USE HospitalDW
 GO
 
+---------------------------------------------
+-- Clinic Mart : Dimensions
+---------------------------------------------
 -- Dimensions First Loader Procedures
 CREATE OR ALTER PROCEDURE Clinic.dimDepartments_FirstLoader
 	AS
@@ -55,8 +58,8 @@ CREATE OR ALTER PROCEDURE Clinic.dimDepartments_FirstLoader
 		END TRY
 		BEGIN CATCH
 			INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [text], [affected_rows])
-			VALUES (GETDATE(), 'InsuranceCompanies', 0, 'Error while inserting or updating', @@ROWCOUNT);
-			SELECT ERROR_MESSAGE()
+			VALUES (GETDATE(), 'dimDepartments', 0, 'Error while inserting or updating', @@ROWCOUNT);
+			SELECT ERROR_MESSAGE() AS ErrorMessage
 		END CATCH
 	END
 GO
@@ -80,57 +83,611 @@ CREATE OR ALTER PROCEDURE Clinic.dimDoctorContracts_FirstLoader
 						,CASE
 							WHEN [active] = 0 THEN 'Not Active'
 							ELSE 'Active'
-						 END AS []
+						 END AS [active_description]
 						,[additional_info]
-
+				FROM HospitalSA.DoctorContracts
+			---------------------------------------------------
+			INSERT INTO [dbo].[Logs]
+				([date]
+				,[table_name]
+				,[status]
+				,[description]
+				,[affected_rows])
+			VALUES
+				(GETDATE()
+				,'dimDoctorContracts'
+				,1
+				,'inserting new values was successfull'
+				,@@ROWCOUNT)
 		END TRY
 		BEGIN CATCH
+			INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [text], [affected_rows])
+			VALUES (GETDATE(), 'dimDoctorContracts', 0, 'Error while inserting or updating', @@ROWCOUNT);
+			SELECT ERROR_MESSAGE() AS ErrorMessage
 		END CATCH
 	END
 GO
----------------------------------------------
----------------------------------------------
-create or alter procedure dimInsuranceCompanies
-	as 
-	begin
-	begin try
-		merge HospitalDW.dbo.InsuranceCompanies as IC
-		using HospitalSA.dbo.InsuranceCompanies as SA on
-		IC.insuranceCompany_ID = SA.insuranceCompany_ID
 
-		when not matched then 
-		insert values (
-		[insuranceCompany_ID]
-		,[name]
-		,[license_code]
-		,[phone_number]
-		,[address]
-		)
-		when matched and (IC.phone_number != SA.phone_number) then 
-		update set IC.phone_Number = SA.phone_number
-		;
-		--logs
-		insert into [dbo].[Logs]
-			([date]
-			,[table_name]
-			,[status]
-			,[text]
-			,[affected_rows])
-		values
-			(GETDATE()
-			,'InsuranceCompanies'
-			,1
-			,'inserting new values was successfull'
-			,@@ROWCOUNT)
-	end try
-	begin catch
-		INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [text], [affected_rows])
-		VALUES (GETDATE(), 'dbo.InsuranceCompanies', 0, 'Error while inserting or updating', @@ROWCOUNT);
-	end catch
-	end
-go
+CREATE OR ALTER PROCEDURE Clinic.dimDoctors_FirstLoader @curr_date DATE
+	AS
+	BEGIN
+		BEGIN TRY
+			TRUNCATE TABLE Clinic.dimDoctors
+
+			INSERT INTO Clinic.dimDoctors(
+						 [doctor_ID],[doctorContract_ID],[national_code]
+						,[license_code],[first_name],[last_name]
+						,[birthdate],[phone_number],[department_ID]
+						,[department_name],[education_degree]
+						,[specialty_description],[graduation_date]
+						,[university],[contract_start_date]
+						,[contract_end_date],[appointment_portion]
+						,[gender],[religion],[nationality]
+						,[marital_status],[marital_status_description]
+						,[postal_code],[address],[additional_info]
+						,[start_date],[end_date],[current_flag
+						],[ContractDegree],[ContractDegree_description])
+				VALUES(-1,-1,-1,'Unknown','Unknown','Unknown'
+					   ,'Unknown',NULL,'Unknown',-1,'Unknown'
+					   ,-1,'Unknown',NULL,'Unknown',NULL,NULL
+					   ,-1,'Unknown','Unknown','Unknown',0
+					   ,'Unknown','Unknown','Unknown',NULL
+					   ,NULL,1,0,'Unknown')
+
+			INSERT INTO Clinic.dimDoctors(
+						 [doctor_ID],[doctorContract_ID],[national_code]
+						,[license_code],[first_name],[last_name]
+						,[birthdate],[phone_number],[department_ID]
+						,[department_name],[education_degree]
+						,[specialty_description],[graduation_date]
+						,[university],[contract_start_date]
+						,[contract_end_date],[appointment_portion]
+						,[gender],[religion],[nationality]
+						,[marital_status],[marital_status_description]
+						,[postal_code],[address],[additional_info]
+						,[start_date],[end_date],[current_flag
+						],[ContractDegree],[ContractDegree_description])
+
+				SELECT 	 [doctor_ID]
+						,[doctorContract_ID]
+						,[national_code]
+						,[license_code]
+						,[first_name]
+						,[last_name]
+						,[birthdate]
+						,[phone_number]
+						,doc.[department_ID]
+						,dep.[name]
+						,[education_degree]
+						,[specialty_description]
+						,[graduation_date]
+						,[university]
+						,[gender]
+						,[religion]
+						,[nationality]
+						,[marital_status]
+						,[marital_status_description]
+						,[postal_code]
+						,[address]
+						,[additional_info]
+						,@curr_date
+						,NULL
+						,1
+						,0 AS [ContractDegree]
+						,CASE
+							WHEN [ContractDegree] = 0 THEN 'FirstLoad'
+							ELSE 'FirstLoad'
+						END
+				FROM HospitalSA.Doctors doc 
+				INNER JOIN HospitalSA.Departments dep 
+				ON doc.department_ID = dep.department_ID
+			---------------------------------------------------
+			INSERT INTO [dbo].[Logs]
+				([date]
+				,[table_name]
+				,[status]
+				,[description]
+				,[affected_rows])
+			VALUES
+				(GETDATE()
+				,'dimDoctors'
+				,1
+				,'inserting new values was successfull'
+				,@@ROWCOUNT)
+		END TRY
+		BEGIN CATCH 
+			INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [text], [affected_rows])
+			VALUES (GETDATE(), 'dimDoctors', 0, 'Error while inserting or updating', @@ROWCOUNT);
+			SELECT ERROR_MESSAGE() AS ErrorMessage
+		END CATCH
+	END
+GO
+
+CREATE OR ALTER PROCEDURE Clinic.dimIllnessTypes_FirstLoader
+	AS 
+	BEGIN
+		BEGIN TRY
+			TRUNCATE TABLE Clinic.dimIllnessTypes
+
+			INSERT INTO Clinic.dimIllnessTypes
+				VALUES(-1,'Unknown','Unknown',-1)
+
+			INSERT INTO Clinic.dimIllnessTypes
+				SELECT  [illnessType_ID]
+						,[name]
+						,[description]
+						,[related_department_ID]
+				FROM HospitalSA.IllnessTypes
+			---------------------------------------------------
+			INSERT INTO [dbo].[Logs]
+				([date]
+				,[table_name]
+				,[status]
+				,[description]
+				,[affected_rows])
+			VALUES
+				(GETDATE()
+				,'dimIllnessTypes'
+				,1
+				,'inserting new values was successfull'
+				,@@ROWCOUNT)
+		END TRY
+		BEGIN CATCH
+			INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [text], [affected_rows])
+			VALUES (GETDATE(), 'dimIllnessTypes', 0, 'Error while inserting or updating', @@ROWCOUNT);
+			SELECT ERROR_MESSAGE() AS ErrorMessage
+		END CATCH
+	END
+GO
+
+CREATE OR ALTER PROCEDURE Clinic.dimIllnesses_FirstLoader
+	AS
+	BEGIN
+		BEGIN TRY 
+			TRUNCATE TABLE Clinic.dimIllnesses
+
+			INSERT INTO Clinic.dimIllnesses
+				VALUES(-1,'Unknown',-1,'Unknown','Unknown'
+					   ,0,-1,'Unknown',0,'Unknown')
+
+			INSERT INTO Clinic.dimIllnesses
+				SELECT   [illness_ID]
+						,[name]
+						,i.[illnessType_ID]
+						,it.[name] AS [illnessType_name]
+						,[scientific_name]
+						,[special_illness]
+						,[killing_status]
+						,[killing_description]
+						,[chronic]
+						,[chronic_description]
+				FROM HospitalSA.Illnesses i
+				INNER JOIN HospitalSA.IllnessTypes it
+				ON i.illnessType_ID = it.illnessType_ID
+			---------------------------------------------------
+			INSERT INTO [dbo].[Logs]
+				([date]
+				,[table_name]
+				,[status]
+				,[description]
+				,[affected_rows])
+			VALUES
+				(GETDATE()
+				,'dimIllnesses'
+				,1
+				,'inserting new values was successfull'
+				,@@ROWCOUNT)
+		END TRY
+		BEGIN CATCH 
+			INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [text], [affected_rows])
+			VALUES (GETDATE(), 'dimIllnesses', 0, 'Error while inserting or updating', @@ROWCOUNT);
+			SELECT ERROR_MESSAGE() AS ErrorMessage
+		END CATCH
+	END
+GO
+
+-- Dimensions Usual Loader Procedures
+CREATE OR ALTER PROCEDURE Clinic.dimDepartments_Loader @curr_date DATE
+	AS
+	BEGIN
+		BEGIN TRY
+			MERGE Clinic.dimDepartments AS dw
+			USING HospitalSA.dbo.Departments AS sa 
+			ON dw.department_ID = sa.department_ID
+
+			WHEN MATCHED AND (
+				dw.current_chairman	<> sa.chairman
+				OR dw.current_assistant	<> sa.assistant
+				OR dw.chairman_phone_number <> sa.chairman_phone_number
+				OR dw.assistant_phone_number <> sa.assistant_phone_number
+				OR dw.reception_phone_number <> sa.reception_phone_number
+			) 
+			THEN UPDATE SET 
+				-- SCD3
+				dw.previous_chairman = dw.current_chairman,
+				dw.chairman_change_date = @curr_date,
+				dw.current_chairman	= sa.chairman,
+				dw.previous_assistant = dw.current_assistant,
+				dw.assistant_change_date = @curr_date,
+				dw.current_assistant = sa.assistant,
+				-- SCD1
+				dw.chairman_phone_number = sa.chairman_phone_number,
+				dw.assistant_phone_number = sa.assistant_phone_number,
+				dw.reception_phone_number = sa.reception_phone_number
+			WHEN NOT MATCHED BY TARGET 
+			THEN INSERT (
+				 [department_ID]
+				,[name]
+				,[description]
+				,[previous_chairman]
+				,[chairman_change_date]
+				,[current_chairman]
+				,[previous_assistant]
+				,[assistant_change_date]
+				,[current_assistant]
+				,[chairman_phone_number]
+				,[assistant_phone_number]
+				,[chairman_room]
+				,[assistant_room]
+				,[reception_phone_number]
+				,[budget]
+				,[additional_info]
+			) VALUES (
+				 sa.[department_ID]
+				,sa.[name]
+				,sa.[description]
+				,NULL
+				,NULL
+				,sa.[chairman]
+				,NULL
+				,NULL
+				,sa.[assistant]
+				,sa.[chairman_phone_number]
+				,sa.[assistant_phone_number]
+				,sa.[chairman_room]
+				,sa.[assistant_room]
+				,sa.[reception_phone_number]
+				,sa.[budget]
+				,sa.[additional_info]
+			);
+		---------------------------------------------------
+			INSERT INTO [dbo].[Logs]
+				([date]
+				,[table_name]
+				,[status]
+				,[description]
+				,[affected_rows])
+			VALUES
+				(GETDATE()
+				,'dimDepartments'
+				,1
+				,'inserting new values was successfull'
+				,@@ROWCOUNT)
+		END TRY
+		BEGIN CATCH
+			INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [text], [affected_rows])
+			VALUES (GETDATE(), 'dimDepartments', 0, 'Error while inserting or updating', @@ROWCOUNT);
+			SELECT ERROR_MESSAGE() AS ErrorMessage
+		END CATCH
+	END
+GO
+
+CREATE OR ALTER PROCEDURE Clinic.dimDoctorContracts_Loader
+	AS
+	BEGIN
+		BEGIN TRY
+			MERGE Clinic.dimDoctorContracts AS dw
+			USING HospitalSA.dbo.DoctorContracts AS sa 
+			ON dw.doctorContract_ID = sa.doctorContract_ID
+			WHEN NOT MATCHED BY TARGET 
+			THEN INSERT (
+				 [doctorContract_ID]
+				,[contract_start_date]
+				,[contract_end_date]
+				,[appointment_portion]
+				,[salary]
+				,[active]
+				,[active_description]
+				,[additional_info]
+			) VALUES (
+				 sa.[doctorContract_ID]
+				,sa.[contract_start_date]
+				,sa.[contract_end_date]
+				,sa.[appointment_portion]
+				,sa.[salary]
+				,sa.[active]
+				,CASE
+					WHEN sa.[active] = 0 THEN 'Not Active'
+					ELSE 'Active'
+					END 
+				,sa.[additional_info]
+			);
+			---------------------------------------------------
+			INSERT INTO [dbo].[Logs]
+				([date]
+				,[table_name]
+				,[status]
+				,[description]
+				,[affected_rows])
+			VALUES
+				(GETDATE()
+				,'dimDoctorContracts'
+				,1
+				,'inserting new values was successfull'
+				,@@ROWCOUNT)
+		END TRY
+		BEGIN CATCH
+			INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [text], [affected_rows])
+			VALUES (GETDATE(), 'dimDoctorContracts', 0, 'Error while inserting or updating', @@ROWCOUNT);
+			SELECT ERROR_MESSAGE() AS ErrorMessage
+		END CATCH
+	END
+GO
+
+CREATE OR ALTER PROCEDURE Clinic.dimDoctors_Loader @curr_date DATE
+	AS
+	BEGIN
+		BEGIN TRY
+			DECLARE @RowAffected INT;
+			MERGE INTO HospitalDW.Clinic.dimDoctors AS dw
+			USING HospitalSA.dbo.Doctors AS sa
+			ON  dw.medicine_ID = sa.medicine_ID 
+			AND dw.[current_flag] = 1
+			WHEN MATCHED AND(
+				dw.doctorContract_ID <> sa.doctorContract_ID 
+				OR dw.education_degree <> sa.education_degree
+			)
+			THEN UPDATE SET 
+					end_date = @curr_date, 
+					current_flag = 0
+			WHEN NOT MATCHED BY Target 
+			THEN  INSERT 
+			(
+				[medicine_ID]
+				,[name]
+				,[latin_name]
+				,[dose]
+				,[side_effects]
+				,[price]
+				,[description]
+				,[start_date]
+				,[end_date]
+				,[current_flag]
+			)
+			VALUES 
+			(
+				Source.[medicine_ID], 
+				Source.[name],
+				Source.[latin_name],
+				Source.[dose],
+				Source.[side_effects],
+				Source.[price],
+				Source.[description],
+				@curr_date,
+				NULL,
+				1
+			);
+			SET @RowAffected = @@ROWCOUNT;
+			INSERT INTO HospitalDW.Pharmacy.Medicines
+				SELECT Source.[medicine_ID], 
+							Source.[name],
+							Source.[latin_name],
+							Source.[dose],
+							Source.[side_effects],
+							Source.[price],
+							Source.[description],
+							@curr_date,
+							NULL,
+							1
+				FROM HospitalDW.Pharmacy.Medicines AS Target INNER JOIN HospitalSA.dbo.Medicines AS Source
+				ON  [Target].medicine_ID = Source.medicine_ID 
+				AND [Target].[end_date] = @curr_date;
+
+			INSERT INTO Clinic.dimDoctors(
+						 [doctor_ID],[doctorContract_ID],[national_code]
+						,[license_code],[first_name],[last_name]
+						,[birthdate],[phone_number],[department_ID]
+						,[department_name],[education_degree]
+						,[specialty_description],[graduation_date]
+						,[university],[contract_start_date]
+						,[contract_end_date],[appointment_portion]
+						,[gender],[religion],[nationality]
+						,[marital_status],[marital_status_description]
+						,[postal_code],[address],[additional_info]
+						,[start_date],[end_date],[current_flag
+						],[ContractDegree],[ContractDegree_description])
+
+				SELECT 	 [doctor_ID]
+						,[doctorContract_ID]
+						,[national_code]
+						,[license_code]
+						,[first_name]
+						,[last_name]
+						,[birthdate]
+						,[phone_number]
+						,doc.[department_ID]
+						,dep.[name]
+						,[education_degree]
+						,[specialty_description]
+						,[graduation_date]
+						,[university]
+						,[gender]
+						,[religion]
+						,[nationality]
+						,[marital_status]
+						,[marital_status_description]
+						,[postal_code]
+						,[address]
+						,[additional_info]
+						,@curr_date
+						,NULL
+						,1
+						,0 AS [ContractDegree]
+						,CASE
+							WHEN [ContractDegree] = 0 THEN 'FirstLoad'
+							ELSE 'FirstLoad'
+						END
+				FROM HospitalSA.Doctors doc 
+				INNER JOIN HospitalSA.Departments dep 
+				ON doc.department_ID = dep.department_ID
+			---------------------------------------------------
+			INSERT INTO [dbo].[Logs]
+				([date]
+				,[table_name]
+				,[status]
+				,[description]
+				,[affected_rows])
+			VALUES
+				(GETDATE()
+				,'dimDoctors'
+				,1
+				,'inserting new values was successfull'
+				,@@ROWCOUNT)
+		END TRY
+		BEGIN CATCH 
+			INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [text], [affected_rows])
+			VALUES (GETDATE(), 'dimDoctors', 0, 'Error while inserting or updating', @@ROWCOUNT);
+			SELECT ERROR_MESSAGE() AS ErrorMessage
+		END CATCH
+	END
+GO
+
+CREATE OR ALTER PROCEDURE Clinic.dimIllnessTypes_Loader
+	AS 
+	BEGIN
+		BEGIN TRY
+			TRUNCATE TABLE Clinic.dimIllnessTypes
+
+			INSERT INTO Clinic.dimIllnessTypes
+				VALUES(-1,'Unknown','Unknown',-1)
+
+			INSERT INTO Clinic.dimIllnessTypes
+				SELECT  [illnessType_ID]
+						,[name]
+						,[description]
+						,[related_department_ID]
+				FROM HospitalSA.IllnessTypes
+			---------------------------------------------------
+			INSERT INTO [dbo].[Logs]
+				([date]
+				,[table_name]
+				,[status]
+				,[description]
+				,[affected_rows])
+			VALUES
+				(GETDATE()
+				,'dimIllnessTypes'
+				,1
+				,'inserting new values was successfull'
+				,@@ROWCOUNT)
+		END TRY
+		BEGIN CATCH
+			INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [text], [affected_rows])
+			VALUES (GETDATE(), 'dimIllnessTypes', 0, 'Error while inserting or updating', @@ROWCOUNT);
+			SELECT ERROR_MESSAGE() AS ErrorMessage
+		END CATCH
+	END
+GO
+
+CREATE OR ALTER PROCEDURE Clinic.dimIllnesses_Loader
+	AS
+	BEGIN
+		BEGIN TRY 
+			TRUNCATE TABLE Clinic.dimIllnesses
+
+			INSERT INTO Clinic.dimIllnesses
+				VALUES(-1,'Unknown',-1,'Unknown','Unknown'
+					   ,0,-1,'Unknown',0,'Unknown')
+
+			INSERT INTO Clinic.dimIllnesses
+				SELECT   [illness_ID]
+						,[name]
+						,i.[illnessType_ID]
+						,it.[name] AS [illnessType_name]
+						,[scientific_name]
+						,[special_illness]
+						,[killing_status]
+						,[killing_description]
+						,[chronic]
+						,[chronic_description]
+				FROM HospitalSA.Illnesses i
+				INNER JOIN HospitalSA.IllnessTypes it
+				ON i.illnessType_ID = it.illnessType_ID
+			---------------------------------------------------
+			INSERT INTO [dbo].[Logs]
+				([date]
+				,[table_name]
+				,[status]
+				,[description]
+				,[affected_rows])
+			VALUES
+				(GETDATE()
+				,'dimIllnesses'
+				,1
+				,'inserting new values was successfull'
+				,@@ROWCOUNT)
+		END TRY
+		BEGIN CATCH 
+			INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [text], [affected_rows])
+			VALUES (GETDATE(), 'dimIllnesses', 0, 'Error while inserting or updating', @@ROWCOUNT);
+			SELECT ERROR_MESSAGE() AS ErrorMessage
+		END CATCH
+	END
+GO
+
 ---------------------------------------------
+-- Clinic Mart : Facts
 ---------------------------------------------
+CREATE OR ALTER PROCEDURE dimPatients
+	AS 
+	BEGIN 
+		BEGIN TRY
+			MERGE INTO HospitalDW.dbo.Patients AS [Target]
+			USING HospitalSA.dbo.Patients AS [Source]
+			ON Source.patient_ID = [Target].patient_ID
+			WHEN MATCHED AND
+				(
+					[Target].height						<> Source.height
+					OR [Target].[weight]				<> Source.[weight]
+					OR [Target].phone_number <> Source.phone_number
+				) 
+			THEN UPDATE SET 
+						height = Source.[height],
+						[weight] = Source.[weight],
+						phone_number = Source.[phone_number]
+			WHEN NOT MATCHED BY TARGET 
+			THEN INSERT (
+				[patient_ID]
+				,[national_code]
+				,[name]
+				,[family]
+				,[birthdate]
+				,[height]
+				,[weight]
+				,[gender]
+				,[phone_number]
+			) VALUES (
+				Source.[patient_ID],
+				Source.[national_code],
+				Source.[first_name],
+				Source.[last_name],
+				Source.[birthdate],
+				Source.[height],
+				Source.[weight],
+				Source.[gender],
+				Source.[phone_number]
+			);
+			INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [text], [affected_rows])
+			VALUES (GETDATE(), 'dbo.Patients', 1, 'Update or Insert was Successful', @@ROWCOUNT);
+		END TRY
+		BEGIN CATCH
+			INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [text], [affected_rows])
+			VALUES (GETDATE(), 'dbo.Patients', 0, 'Update or Insert was Failed', @@ROWCOUNT);
+			RETURN;
+		END CATCH
+	END
+GO
+
 create or alter procedure Pharmacy.dimMedicineFactory
 	as 
 	begin
@@ -169,8 +726,7 @@ create or alter procedure Pharmacy.dimMedicineFactory
 	end catch
 	end
 go
-------------------------------------------------------
-------------------------------------------------------
+
 create or alter procedure Pharmacy.dimMedicineFactory_FirstLoader
 	as
 	begin
@@ -206,8 +762,7 @@ create or alter procedure Pharmacy.dimMedicineFactory_FirstLoader
 		end catch
 	end
 go
-------------------------------------------------------
-------------------------------------------------------
+
 CREATE OR ALTER PROCEDURE dimPatients_FirstLoader
 	AS 
 	BEGIN
@@ -259,59 +814,7 @@ CREATE OR ALTER PROCEDURE dimPatients_FirstLoader
 		END CATCH
 	END
 GO
-------------------------------------------------------
-------------------------------------------------------
-CREATE OR ALTER PROCEDURE dimPatients
-	AS 
-	BEGIN 
-		BEGIN TRY
-			MERGE INTO HospitalDW.dbo.Patients AS [Target]
-			USING HospitalSA.dbo.Patients AS [Source]
-			ON Source.patient_ID = [Target].patient_ID
-			WHEN MATCHED AND
-				(
-					[Target].height						<> Source.height
-					OR [Target].[weight]				<> Source.[weight]
-					OR [Target].phone_number <> Source.phone_number
-				) 
-			THEN UPDATE SET 
-						height = Source.[height],
-						[weight] = Source.[weight],
-						phone_number = Source.[phone_number]
-			WHEN NOT MATCHED BY TARGET 
-			THEN INSERT (
-				[patient_ID]
-				,[national_code]
-				,[name]
-				,[family]
-				,[birthdate]
-				,[height]
-				,[weight]
-				,[gender]
-				,[phone_number]
-			) VALUES (
-				Source.[patient_ID],
-				Source.[national_code],
-				Source.[first_name],
-				Source.[last_name],
-				Source.[birthdate],
-				Source.[height],
-				Source.[weight],
-				Source.[gender],
-				Source.[phone_number]
-			);
-			INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [text], [affected_rows])
-			VALUES (GETDATE(), 'dbo.Patients', 1, 'Update or Insert was Successful', @@ROWCOUNT);
-		END TRY
-		BEGIN CATCH
-			INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [text], [affected_rows])
-			VALUES (GETDATE(), 'dbo.Patients', 0, 'Update or Insert was Failed', @@ROWCOUNT);
-			RETURN;
-		END CATCH
-	END
-GO
-------------------------------------------------------
-------------------------------------------------------
+
 CREATE OR ALTER PROCEDURE Pharmacy.dimMedicines_FirstLoader @curr_date DATE
 	AS 
 	BEGIN
@@ -363,8 +866,7 @@ CREATE OR ALTER PROCEDURE Pharmacy.dimMedicines_FirstLoader @curr_date DATE
 		END CATCH
 	END
 GO
-------------------------------------------------------
-------------------------------------------------------
+
 CREATE OR ALTER PROCEDURE Pharmacy.dimMedicines @curr_date DATE
 	AS 
 	BEGIN
@@ -434,8 +936,7 @@ CREATE OR ALTER PROCEDURE Pharmacy.dimMedicines @curr_date DATE
 		END CATCH
 	END
 GO
-------------------------------------------------------
-------------------------------------------------------
+
 create or alter procedure  factMedicineTransaction_FirstLoader 
 	as 
 	begin
@@ -572,8 +1073,7 @@ create or alter procedure  factMedicineTransaction_FirstLoader
 		end catch
 	end
 go
-------------------------------------------------------
-------------------------------------------------------
+
 create or alter procedure  factMedicineTransaction
 	as 
 	begin
@@ -714,8 +1214,7 @@ create or alter procedure  factMedicineTransaction
 		end catch
 	end
 go
-------------------------------------------------------
-------------------------------------------------------
+
 CREATE OR ALTER PROCEDURE [Pharmacy].uspFirstLoader
 	AS
 	BEGIN 
@@ -762,8 +1261,7 @@ CREATE OR ALTER PROCEDURE [Pharmacy].uspFirstLoader
 		END CATCH
 	END
 GO
-------------------------------------------------------
-------------------------------------------------------
+
  CREATE OR ALTER PROCEDURE [Pharmacy].uspUsaual
 	AS 
 	BEGIN
