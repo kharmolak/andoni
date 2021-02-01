@@ -195,36 +195,34 @@ create table Clinic.dimDoctorContracts(
 go
 
 create table Clinic.dimDoctors(
-	doctor_code						int primary key, -- surrogate key
-    doctor_ID								int,
-	doctorContract_ID				int,--SCD2
-    national_code						varchar(15),
-    license_code						varchar(25),
-    first_name							varchar(30),
-    last_name							varchar(75),
-    birthdate								date,
-    phone_number					varchar(25),--SCD1
-	department_ID						int,
-	department_name				varchar(30),
-	education_degree				int, --[1-3]  --SCD2 
-	specialty_description			varchar(100),
-	graduation_date					date,
-	university								varchar(100),
-	contract_start_date				date, 
-	contract_end_date				date,
-	appointment_portion			int,
-	gender									varchar(10),
-	religion								varchar(100),
-	nationality							varchar(50),
-	marital_status						bit,
-	marital_status_description	varchar(20), -- 0 for single / 1 for married
-	postal_code							varchar(12),
-	[address]								varchar(200),
-	additional_info						varchar(200),
-	[start_date]							date,
-    end_date								date,
-    current_flag							int,
-	ContractDegree					bit-- 0 -> Contract / 1 -> Degree
+	doctor_code							int primary key, -- surrogate key
+    doctor_ID									int,
+	doctorContract_ID					int,--SCD2
+    national_code							varchar(15),
+    license_code							varchar(25),
+    first_name								varchar(30),
+    last_name								varchar(75),
+    birthdate									date,
+    phone_number						varchar(25),--SCD1
+	department_ID							int,
+	department_name					varchar(30),
+	education_degree					int, --[1-3]  --SCD2 
+	specialty_description				varchar(100),
+	graduation_date						date,
+	university									varchar(100),
+	gender										varchar(10),
+	religion									varchar(100),
+	nationality								varchar(50),
+	marital_status							bit,
+	marital_status_description		varchar(20), -- 0 for single / 1 for married
+	postal_code								varchar(12),
+	[address]									varchar(200),
+	additional_info							varchar(200),
+	[start_date]								date,
+    end_date									date,
+    current_flag								int,
+	ContractDegree						bit,-- 0 -> Contract / 1 -> Degree
+	ContractDegree_description	bit
 )
 go
 
