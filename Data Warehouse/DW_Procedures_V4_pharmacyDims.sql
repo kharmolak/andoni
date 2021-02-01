@@ -347,14 +347,14 @@ CREATE OR ALTER PROCEDURE Pharmacy.dimMedicines_Loader @curr_date DATE
 				,1
 				,case
 						when [Target].purchase_price <> Source. purchase_price and [Target].sales_price <> Source. sales_price then 3
-						when [Target].purchase_price <> Source. purchase_price then 2
-						when [Target].sales_price <> Source. sales_price then 1
+						when [Target].purchase_price <> Source. purchase_price and [Target].sales_price = Source. sales_price then 2
+						when [Target].sales_price <> Source. sales_price and [Target].purchase_price = Source. purchase_price then 1
 						else sales_purchase
 					end
 				,case
 						when [Target].purchase_price <> Source. purchase_price and [Target].sales_price <> Source. sales_price then 'both'
-						when [Target].purchase_price <> Source. purchase_price then 'purchase price'
-						when [Target].sales_price <> Source. sales_price then 'sales price'
+						when [Target].purchase_price <> Source. purchase_price and [Target].sales_price = Source. sales_price then 'purchase price'
+						when [Target].sales_price <> Source. sales_price and [Target].purchase_price = Source. purchase_price then 'sales price'
 						else sales_purchase_description
 					end
 				FROM HospitalDW.Pharmacy.dimMedicines AS Target INNER JOIN HospitalSA.dbo.Medicines AS Source
