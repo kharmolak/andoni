@@ -67,7 +67,7 @@ create table dimInsurances(
 go
 
 create table dimPatients(
-	patient_code						int primary key,-- surrogate key
+	patient_code						int identity(1,1) primary key,-- surrogate key
     patient_ID							int ,
     national_code						varchar(15),
 	insurance_ID						int,--SCD2
@@ -195,7 +195,7 @@ create table Clinic.dimDoctorContracts(
 go
 
 create table Clinic.dimDoctors(
-	doctor_code							int primary key, -- surrogate key
+	doctor_code							int IDENTITY(1,1) primary key, -- surrogate key
     doctor_ID									int,
 	doctorContract_ID					int,--SCD2
     national_code							varchar(15),
