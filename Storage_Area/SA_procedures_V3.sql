@@ -112,7 +112,7 @@ begin
 	begin try
 		truncate table Doctors;
 		insert into Doctors
-		select doctor_ID,department_ID,national_code,license_code,first_name,last_name,birthdate,gender,religion,nationality,marital_status,marital_status_description,phone_number,postal_code,[address],education_degree,specialty_description,graduation_date,university,additional_info
+		select doctor_ID,doctorContract_ID,department_ID,national_code,license_code,first_name,last_name,birthdate,gender,religion,nationality,marital_status,marital_status_description,phone_number,postal_code,[address],education_degree,specialty_description,graduation_date,university,additional_info
 		from Hospital.dbo.Doctors; 
 		insert into Logs values
 		(GETDATE(),'Doctors',1,'Doctors inserted',@@ROWCOUNT);
@@ -129,7 +129,7 @@ begin
 	begin try
 		truncate table DoctorContracts;
 		insert into DoctorContracts
-		select doctorContract_ID,doctor_ID,contract_start_date,contract_end_date,appointment_portion,salary,active,additional_info
+		select doctorContract_ID,contract_start_date,contract_end_date,appointment_portion,salary,active,additional_info
 		from Hospital.dbo.DoctorContracts; 
 		insert into Logs values
 		(GETDATE(),'DoctorContracts',1,'DoctorContracts inserted',@@ROWCOUNT);

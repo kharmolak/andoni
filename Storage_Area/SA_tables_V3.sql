@@ -106,6 +106,7 @@ additional_info varchar(200)
 
 create table Doctors(
 doctor_ID int primary key,
+doctorContract_ID int ,
 department_ID int ,
 national_code varchar(10) ,
 license_code varchar(15) ,
@@ -129,7 +130,6 @@ additional_info varchar(200)
 
 create table DoctorContracts(
 doctorContract_ID int ,
-doctor_ID int,
 contract_start_date date  ,
 contract_end_date date  ,
 appointment_portion int  ,
