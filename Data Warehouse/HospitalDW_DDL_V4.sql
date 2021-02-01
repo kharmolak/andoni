@@ -40,7 +40,7 @@ create table dimInsuranceCompanies(
 	manager_phone_number	varchar(25),--SCD1
 	agent_phone_number			varchar(25),--SCD1
 	additional_info						varchar(200),
-	active									bit,--SCD1
+	active									tinyint,--SCD1
 	active_description				varchar(200)
 )
 go
@@ -130,7 +130,7 @@ create table Pharmacy.dimMedicines(
     [start_date]								date,
     end_date									date,
     current_flag								int,
-	sales_purchase							bit, -- 0 -> sales / 1 -> purchase
+	sales_purchase							tinyint, -- -1 -> null records / 0 -> firstload/ 1 -> sales / 2 -> purchase / 3 -> both 
 	sales_purchase_description		varchar(50)
 )
 go
@@ -221,8 +221,8 @@ create table Clinic.dimDoctors(
 	[start_date]								date,
     end_date									date,
     current_flag								int,
-	ContractDegree						bit,-- 0 -> Contract / 1 -> Degree
-	ContractDegree_description	varchar(50)
+	Contract_Degree						tinyint,-- -1 -> null record / 0 -> firstload / 1 -> Contract / 2 -> Degree / 3 -> both
+	Contract_Degree_description	varchar(50)
 )
 go
 
