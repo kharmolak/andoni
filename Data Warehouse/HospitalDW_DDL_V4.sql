@@ -189,6 +189,7 @@ create table Clinic.dimDoctorContracts(
 	appointment_portion		int,
 	salary								int,
 	active								bit,
+	active_description			varchar(50),
 	additional_info					varchar(200) 
 )
 go
