@@ -158,14 +158,14 @@ create or alter procedure dimInsuranceCompanies_Loader @curr_date Date
 			,[affected_rows])
 		values
 			(GETDATE()
-			,'InsuranceCompanies'
+			,'dimInsuranceCompanies'
 			,1
 			,'inserting new values was successfull'
 			,@@ROWCOUNT)
 	end try
 	begin catch
 		INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [description], [affected_rows])
-		VALUES (GETDATE(), 'dbo.InsuranceCompanies', 0, 'Error while inserting or updating', @@ROWCOUNT);
+		VALUES (GETDATE(), 'dbo.dimInsuranceCompanies', 0, 'Error while inserting or updating', @@ROWCOUNT);
 	end catch
 	end
 go
@@ -402,11 +402,11 @@ CREATE OR ALTER PROCEDURE dimPatients_FirstLoader @curr_date date
 				FROM HospitalSA.dbo.Patients;
 
 			INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [description], [affected_rows])
-			VALUES (GETDATE(), 'dbo.Patients', 1, 'First Load was Successful', @@ROWCOUNT);
+			VALUES (GETDATE(), 'dbo.dimPatients', 1, 'First Load was Successful', @@ROWCOUNT);
 		END TRY
 		BEGIN CATCH
 			INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [description], [affected_rows])
-			VALUES (GETDATE(), 'dbo.Patients', 0, 'First Load was Failed', @@ROWCOUNT);
+			VALUES (GETDATE(), 'dbo.dimPatients', 0, 'First Load was Failed', @@ROWCOUNT);
 			RETURN;
 		END CATCH
 	END
@@ -535,11 +535,11 @@ CREATE OR ALTER PROCEDURE dimPatients_Loader @curr_date date
 			;
 
 			INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [description], [affected_rows])
-			VALUES (GETDATE(), 'dbo.Patients', 1, 'Update or Insert was Successful', @@ROWCOUNT);
+			VALUES (GETDATE(), 'dbo.dimPatients', 1, 'Update or Insert was Successful', @@ROWCOUNT);
 		END TRY
 		BEGIN CATCH
 			INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [description], [affected_rows])
-			VALUES (GETDATE(), 'dbo.Patients', 0, 'Update or Insert was Failed', @@ROWCOUNT);
+			VALUES (GETDATE(), 'dbo.dimPatients', 0, 'Update or Insert was Failed', @@ROWCOUNT);
 			RETURN;
 		END CATCH
 	END
