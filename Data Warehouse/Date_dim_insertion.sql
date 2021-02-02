@@ -1,7 +1,7 @@
-delete from dbo.[Date];
+delete from dbo.[dimDate];
 
 -- Sajede
-bulk insert dbo.[Date]
+bulk insert dbo.[dimDate]
 from 'E:\education files\db2\Project\Date.txt'
 with
 (
@@ -10,7 +10,7 @@ with
 );
 
 -- Maryam 
-bulk insert dbo.[Date]
+bulk insert dbo.[dimDate]
 from '\\VBOXSVR\Virtual_Share\DataBase2\andoni\Data Warehouse\Date.txt'
 with
 (
