@@ -80,10 +80,7 @@ CREATE OR ALTER PROCEDURE Clinic.dimDoctorContracts_FirstLoader
 						,[appointment_portion]
 						,[salary]
 						,[active]
-						,CASE
-							WHEN [active] = 0 THEN 'Not Active'
-							ELSE 'Active'
-						 END AS [active_description]
+						,[active_description]
 						,[additional_info]
 				FROM HospitalSA.DoctorContracts
 			---------------------------------------------------
@@ -289,10 +286,7 @@ CREATE OR ALTER PROCEDURE Clinic.dimIllnesses_FirstLoader
 						,it.[name] AS [illnessType_name]
 						,[scientific_name]
 						,[special_illness]
-						,CASE
-							WHEN [special_illness] = 0 THEN 'Not special'
-							ELSE 'Special'
-						 END
+						,[special_illness_description]
 						,[killing_status]
 						,[killing_description]
 						,[chronic]
@@ -456,10 +450,7 @@ CREATE OR ALTER PROCEDURE Clinic.dimDoctorContracts_Loader
 				,sa.[appointment_portion]
 				,sa.[salary]
 				,sa.[active]
-				,CASE
-					WHEN sa.[active] = 0 THEN 'Not Active'
-					ELSE 'Active'
-					END 
+				,sa.[active_description]
 				,sa.[additional_info]
 			);
 			---------------------------------------------------
@@ -815,6 +806,8 @@ CREATE OR ALTER PROCEDURE Clinic.factTransactionAppointment_FirstLoader
 				FROM HospitalSA.dbo.Appointments
 			);
 			
+			TRUNCATE TABLE factTransactionAppointment
+
 			--loop in days
 			WHILE @curr_date < @end_date BEGIN
 				BEGIN TRY
@@ -1036,6 +1029,8 @@ CREATE OR ALTER PROCEDURE Clinic.factDailyAppointment_FirstLoader
 				 ,Clinic.dimIllnesses ill
 			WHERE d.current_flag = 1
 
+			TRUNCATE TABLE factDailyAppointment
+
 			--loop in days
 			WHILE @curr_date < @end_date BEGIN
 				BEGIN TRY
@@ -1180,6 +1175,8 @@ CREATE OR ALTER PROCEDURE Clinic.factAccumulativeAppointment_FirstLoader
 			FROM dbo.dimInsuranceCompanies i
 				 ,Clinic.dimDoctors d
 			WHERE d.current_flag = 1
+
+			TRUNCATE TABLE factAccumulativeAppointment
 
 			--loop in days
 			WHILE @curr_date < @end_date BEGIN
@@ -1800,7 +1797,7 @@ GO
 ---------------------------------------------
 -- Clinic Mart : General Procedures 
 ---------------------------------------------
-CREATE OR ALTER PROCEDURE Clinic.FirstLoader
+CREATE OR ALTER PROCEDURE Clinic.FirstLoad
 	AS
 	BEGIN
 		BEGIN TRY
@@ -1839,7 +1836,7 @@ CREATE OR ALTER PROCEDURE Clinic.FirstLoader
 	END
 GO
 
-CREATE OR ALTER PROCEDURE Clinic.Loader
+CREATE OR ALTER PROCEDURE Clinic.Load
 	AS
 	BEGIN
 		BEGIN TRY
@@ -1887,7 +1884,7 @@ GO
 ---------------------------------------------
 -- Clinic Mart : Testing
 ---------------------------------------------
---EXEC Clinic.FirstLoader;
+--EXEC Clinic.FirstLoad;
 --SELECT * FROM Logs;
---EXEC Clinic.Loader;
+--EXEC Clinic.Load;
 --SELECT * FROM Logs;
