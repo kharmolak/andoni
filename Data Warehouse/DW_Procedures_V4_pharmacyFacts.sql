@@ -308,31 +308,48 @@ create or alter procedure  factMonthlyMedicine_FirstLoader @temp_cur_date date
 						where FullDateAlternateKey=DATEADD(month, 1, @temp_cur_date)
 					);
 					--transactions of this month
-					select patient_ID, insuranceCompany_ID,medicine_code,medicine_ID,medicineFactory_ID,number_of_units_bought,paid_price,real_price,insurance_credit,factory_share,income 
+					select patient_ID, insuranceCompany_ID,medicine_ID,medicineFactory_ID,number_of_units_bought,paid_price,real_price,insurance_credit,factory_share,income 
 					into #tmp_transactions
 					from Pharmacy.factTransactionalMedicine
 					where TimeKey>=@temp_cur_datekey and TimeKey<@end_month_datekey;
 
 					--group by
-					select insuranceCompany_ID,medicine_code,medicine_ID,medicineFactory_ID,sum(number_of_units_bought)as total_number_bought,sum(paid_price)as total_paid_price,sum(real_price)as total_real_price,sum(insurance_credit)as total_insurance_credit,sum(factory_share)as total_factory_share,sum(income)as total_income,count(patient_ID)as number_of_patients_bought
+					select insuranceCompany_ID,medicine_ID,medicineFactory_ID,sum(number_of_units_bought)as total_number_bought,sum(paid_price)as total_paid_price,sum(real_price)as total_real_price,sum(insurance_credit)as total_insurance_credit,sum(factory_share)as total_factory_share,sum(income)as total_income,count(patient_ID)as number_of_patients_bought
 					into #tmp_grouped
 					from #tmp_transactions
-					group by insuranceCompany_ID,medicine_code,medicine_ID,medicineFactory_ID
+					group by insuranceCompany_ID,medicine_ID,medicineFactory_ID;
 
-					--all insuranceCompanies
-					select i.insuranceCompany_ID,isnull(t.medicine_code,-1)as medicine_code,isnull(t.medicine_ID,-1)as medicine_ID,isnull(t.medicineFactory_ID,-1)as medicineFactory_ID,isnull(t.total_number_bought,0)as total_number_bought,isnull(t.total_paid_price,0)as total_paid_price,isnull(t.total_real_price,0)as total_real_price,isnull(t.total_insurance_credit,0)as total_insurance_credit,isnull(t.total_factory_share,0)as total_factory_share,isnull(t.total_income,0)as total_income,isnull(t.number_of_patients_bought,0)as number_of_patients_bought
-					into #tmp_grouped_ic
-					from dbo.dimInsuranceCompanies as i left join #tmp_transactions as t on(i.insuranceCompany_ID=t.insuranceCompany_ID)
+					--this month medicine
+					select medicine_ID ,max( [start_date]) as [start_date]
+					into #tmp_active_medicine
+					from Pharmacy.dimMedicines
+					where [start_date]<DATEADD(month, 1, @temp_cur_date) and (current_flag=1 or [end_date]>=@temp_cur_date )
+					group by medicine_ID;
+
+					--
+					select m.medicine_code,m.medicine_ID,m.medicineFactory_ID
+					into #tmp_medicine
+					from Pharmacy.dimMedicines as m inner join #tmp_active_medicine as a on(m.medicine_ID=a.medicine_ID and a.[start_date]=m.[start_date]);
+
+					--all Medicines
+					select isnull(t.insuranceCompany_ID,-1) as insuranceCompany_ID ,m.medicine_code,m.medicine_ID,m.medicineFactory_ID,isnull(t.total_number_bought,0)as total_number_bought,isnull(t.total_paid_price,0)as total_paid_price,isnull(t.total_real_price,0)as total_real_price,isnull(t.total_insurance_credit,0)as total_insurance_credit,isnull(t.total_factory_share,0)as total_factory_share,isnull(t.total_income,0)as total_income,isnull(t.number_of_patients_bought,0)as number_of_patients_bought
+					into #tmp_grouped_m
+					from #tmp_medicine as m left join #tmp_grouped as t on(m.medicine_ID=t.medicine_ID)
 					
-					--all medicines
+					--insert
+					insert into Pharmacy.factMonthlyMedicine
+					select i.insuranceCompany_ID,isnull(t.medicine_code,-1)as medicine_code,isnull(t.medicine_ID,-1)as medicine_ID,isnull(t.medicineFactory_ID,-1)as medicineFactory_ID,@temp_cur_datekey,isnull(t.total_number_bought,0)as total_number_bought,isnull(t.total_paid_price,0)as total_paid_price,isnull(t.total_real_price,0)as total_real_price,isnull(t.total_insurance_credit,0)as total_insurance_credit,isnull(t.total_factory_share,0)as total_factory_share,isnull(t.total_income,0)as total_income,isnull(t.number_of_patients_bought,0)as number_of_patients_bought
+					from dbo.dimInsuranceCompanies as i left join #tmp_grouped_m as t on(i.insuranceCompany_ID=t.insuranceCompany_ID)
 
-					--all medicineFactories
-
-					--delete data
+					--truncate tmps
 					truncate table #tmp_transactions;
+					truncate table #tmp_grouped;
+					truncate table #tmp_active_medicine;
+					truncate table #tmp_medicine;
+					truncate table #tmp_grouped_m;
 
 					insert into Logs values
-					(GETDATE(),'Pharmacy.MedicineTransactionFact',1,'Transactions of '+convert(varchar,@temp_cur_date)+' inserted',@@ROWCOUNT);
+					(GETDATE(),'Pharmacy.factMonthlyMedicine',1,'Records of '+convert(varchar,@temp_cur_date)+' inserted',@@ROWCOUNT);
 					
 					--add a day 
 					set @temp_cur_date=DATEADD(month, 1, @temp_cur_date);
@@ -340,18 +357,273 @@ create or alter procedure  factMonthlyMedicine_FirstLoader @temp_cur_date date
 				end try
 				begin catch
 					insert into Logs values
-					(GETDATE(),'Pharmacy.MedicineTransactionFact',0,'ERROR : Transactions of '+convert(varchar,@temp_cur_date)+' may not inserted',@@ROWCOUNT);
+					(GETDATE(),'Pharmacy.factMonthlyMedicine',0,'ERROR : Records of '+convert(varchar,@temp_cur_date)+' may not inserted',@@ROWCOUNT);
 				end catch
 			end
-			--drop table
-			drop table #tmp_transactions;
+			--drop tables
+				drop table #tmp_transactions;
+				drop table #tmp_grouped;
+				drop table #tmp_active_medicine;
+				drop table #tmp_medicine;
+				drop table #tmp_grouped_m;
 
 			insert into Logs values
-			(GETDATE(),'Pharmacy.MedicineTransactionFact',1,'New Transactions inserted',@@ROWCOUNT);
+			(GETDATE(),'Pharmacy.factMonthlyMedicine',1,'New Records inserted',@@ROWCOUNT);
 		end try
 		begin catch
 			insert into Logs values
-			(GETDATE(),'Pharmacy.MedicineTransactionFact',0,'ERROR : New Transactions may not inserted',@@ROWCOUNT);
+			(GETDATE(),'Pharmacy.factMonthlyMedicine',0,'ERROR : New Records may not inserted',@@ROWCOUNT);
 		end catch
 	end
 go
+
+------------------------------------------------------
+------------------------------------------------------
+
+create or alter procedure  factMonthlyMedicine_Loader @temp_cur_date date
+	as 
+	begin
+		begin try
+			declare @temp_cur_datekey int;
+			declare @end_month_datekey int;
+			declare @end_date date;
+
+			--set end_date and current_date
+			set @end_date=(
+				select max(order_date)
+				from HospitalSA.dbo.MedicineOrderHeaders
+			);
+
+			if(DATEADD(month, 1, @temp_cur_date)>@end_date) return;
+			
+			--loop in months
+			while @temp_cur_date<@end_date begin
+				begin try
+					--find TimeKeys
+					set @temp_cur_datekey=(
+						select TimeKey
+						from dbo.dimDate
+						where FullDateAlternateKey=@temp_cur_date
+					);
+					set @end_month_datekey=(
+						select TimeKey
+						from dbo.dimDate
+						where FullDateAlternateKey=DATEADD(month, 1, @temp_cur_date)
+					);
+					--transactions of this month
+					select patient_ID, insuranceCompany_ID,medicine_ID,medicineFactory_ID,number_of_units_bought,paid_price,real_price,insurance_credit,factory_share,income 
+					into #tmp_transactions
+					from Pharmacy.factTransactionalMedicine
+					where TimeKey>=@temp_cur_datekey and TimeKey<@end_month_datekey;
+
+					--group by
+					select insuranceCompany_ID,medicine_ID,medicineFactory_ID,sum(number_of_units_bought)as total_number_bought,sum(paid_price)as total_paid_price,sum(real_price)as total_real_price,sum(insurance_credit)as total_insurance_credit,sum(factory_share)as total_factory_share,sum(income)as total_income,count(patient_ID)as number_of_patients_bought
+					into #tmp_grouped
+					from #tmp_transactions
+					group by insuranceCompany_ID,medicine_ID,medicineFactory_ID;
+
+					--this month medicine
+					select medicine_ID ,max( [start_date]) as [start_date]
+					into #tmp_active_medicine
+					from Pharmacy.dimMedicines
+					where [start_date]<DATEADD(month, 1, @temp_cur_date) and (current_flag=1 or [end_date]>=@temp_cur_date )
+					group by medicine_ID;
+
+					--
+					select m.medicine_code,m.medicine_ID,m.medicineFactory_ID
+					into #tmp_medicine
+					from Pharmacy.dimMedicines as m inner join #tmp_active_medicine as a on(m.medicine_ID=a.medicine_ID and a.[start_date]=m.[start_date]);
+
+					--all Medicines
+					select isnull(t.insuranceCompany_ID,-1) as insuranceCompany_ID ,m.medicine_code,m.medicine_ID,m.medicineFactory_ID,isnull(t.total_number_bought,0)as total_number_bought,isnull(t.total_paid_price,0)as total_paid_price,isnull(t.total_real_price,0)as total_real_price,isnull(t.total_insurance_credit,0)as total_insurance_credit,isnull(t.total_factory_share,0)as total_factory_share,isnull(t.total_income,0)as total_income,isnull(t.number_of_patients_bought,0)as number_of_patients_bought
+					into #tmp_grouped_m
+					from #tmp_medicine as m left join #tmp_grouped as t on(m.medicine_ID=t.medicine_ID)
+					
+					--insert
+					insert into Pharmacy.factMonthlyMedicine
+					select i.insuranceCompany_ID,isnull(t.medicine_code,-1)as medicine_code,isnull(t.medicine_ID,-1)as medicine_ID,isnull(t.medicineFactory_ID,-1)as medicineFactory_ID,@temp_cur_datekey,isnull(t.total_number_bought,0)as total_number_bought,isnull(t.total_paid_price,0)as total_paid_price,isnull(t.total_real_price,0)as total_real_price,isnull(t.total_insurance_credit,0)as total_insurance_credit,isnull(t.total_factory_share,0)as total_factory_share,isnull(t.total_income,0)as total_income,isnull(t.number_of_patients_bought,0)as number_of_patients_bought
+					from dbo.dimInsuranceCompanies as i left join #tmp_grouped_m as t on(i.insuranceCompany_ID=t.insuranceCompany_ID)
+
+					--truncate tmps
+					truncate table #tmp_transactions;
+					truncate table #tmp_grouped;
+					truncate table #tmp_active_medicine;
+					truncate table #tmp_medicine;
+					truncate table #tmp_grouped_m;
+
+					insert into Logs values
+					(GETDATE(),'Pharmacy.factMonthlyMedicine',1,'Records of '+convert(varchar,@temp_cur_date)+' inserted',@@ROWCOUNT);
+					
+					--add a day 
+					set @temp_cur_date=DATEADD(month, 1, @temp_cur_date);
+					
+				end try
+				begin catch
+					insert into Logs values
+					(GETDATE(),'Pharmacy.factMonthlyMedicine',0,'ERROR : Records of '+convert(varchar,@temp_cur_date)+' may not inserted',@@ROWCOUNT);
+				end catch
+			end
+			--drop tables
+				drop table #tmp_transactions;
+				drop table #tmp_grouped;
+				drop table #tmp_active_medicine;
+				drop table #tmp_medicine;
+				drop table #tmp_grouped_m;
+
+			insert into Logs values
+			(GETDATE(),'Pharmacy.factMonthlyMedicine',1,'New Records inserted',@@ROWCOUNT);
+		end try
+		begin catch
+			insert into Logs values
+			(GETDATE(),'Pharmacy.factMonthlyMedicine',0,'ERROR : New Records may not inserted',@@ROWCOUNT);
+		end catch
+	end
+go
+
+------------------------------------------------------
+------------------------------------------------------
+
+create or alter procedure  factAccumulativeMedicine_FirstLoader @temp_cur_date date
+	as 
+	begin
+		begin try
+			declare @temp_cur_datekey int;
+			declare @end_month_datekey int;
+			declare @end_date date;
+			declare @month_count int;
+
+			--set end_date and current_date
+			set @end_date=(
+				select max(order_date)
+				from HospitalSA.dbo.MedicineOrderHeaders
+			);
+
+			set @month_count=(select count(TimeKey) from Pharmacy.factMonthlyMedicine);
+
+			if(@month_count>0)begin
+				select insuranceCompany_ID,medicine_ID,medicineFactory_ID,sum(total_number_bought)as total_number_bought,sum(total_paid_price)as total_paid_price,sum(total_real_price)as total_real_price,
+				into #tmp_month_grouped
+				from Pharmacy.factMonthlyMedicine
+			end
+			
+			
+			--drop tables
+				drop table #tmp_transactions;
+				drop table #tmp_grouped;
+				drop table #tmp_active_medicine;
+				drop table #tmp_medicine;
+				drop table #tmp_grouped_m;
+
+			insert into Logs values
+			(GETDATE(),'Pharmacy.factAccumulativeMedicine',1,'New Records inserted',@@ROWCOUNT);
+		end try
+		begin catch
+			insert into Logs values
+			(GETDATE(),'Pharmacy.factAccumulativeMedicine',0,'ERROR : New Records may not inserted',@@ROWCOUNT);
+		end catch
+	end
+go
+
+------------------------------------------------------
+------------------------------------------------------
+
+create or alter procedure  factAccumulativeMedicine_Loader @temp_cur_date date
+	as 
+	begin
+		begin try
+			declare @temp_cur_datekey int;
+			declare @end_month_datekey int;
+			declare @end_date date;
+
+			--set end_date and current_date
+			set @end_date=(
+				select max(order_date)
+				from HospitalSA.dbo.MedicineOrderHeaders
+			);
+
+			if(DATEADD(month, 1, @temp_cur_date)>@end_date) return;
+			
+			--loop in months
+			while @temp_cur_date<@end_date begin
+				begin try
+					--find TimeKeys
+					set @temp_cur_datekey=(
+						select TimeKey
+						from dbo.dimDate
+						where FullDateAlternateKey=@temp_cur_date
+					);
+					set @end_month_datekey=(
+						select TimeKey
+						from dbo.dimDate
+						where FullDateAlternateKey=DATEADD(month, 1, @temp_cur_date)
+					);
+					--transactions of this month
+					select patient_ID, insuranceCompany_ID,medicine_ID,medicineFactory_ID,number_of_units_bought,paid_price,real_price,insurance_credit,factory_share,income 
+					into #tmp_transactions
+					from Pharmacy.factTransactionalMedicine
+					where TimeKey>=@temp_cur_datekey and TimeKey<@end_month_datekey;
+
+					--group by
+					select insuranceCompany_ID,medicine_ID,medicineFactory_ID,sum(number_of_units_bought)as total_number_bought,sum(paid_price)as total_paid_price,sum(real_price)as total_real_price,sum(insurance_credit)as total_insurance_credit,sum(factory_share)as total_factory_share,sum(income)as total_income,count(patient_ID)as number_of_patients_bought
+					into #tmp_grouped
+					from #tmp_transactions
+					group by insuranceCompany_ID,medicine_ID,medicineFactory_ID;
+
+					--this month medicine
+					select medicine_ID ,max( [start_date]) as [start_date]
+					into #tmp_active_medicine
+					from Pharmacy.dimMedicines
+					where [start_date]<DATEADD(month, 1, @temp_cur_date) and (current_flag=1 or [end_date]>=@temp_cur_date )
+					group by medicine_ID;
+
+					--
+					select m.medicine_code,m.medicine_ID,m.medicineFactory_ID
+					into #tmp_medicine
+					from Pharmacy.dimMedicines as m inner join #tmp_active_medicine as a on(m.medicine_ID=a.medicine_ID and a.[start_date]=m.[start_date]);
+
+					--all Medicines
+					select isnull(t.insuranceCompany_ID,-1) as insuranceCompany_ID ,m.medicine_code,m.medicine_ID,m.medicineFactory_ID,isnull(t.total_number_bought,0)as total_number_bought,isnull(t.total_paid_price,0)as total_paid_price,isnull(t.total_real_price,0)as total_real_price,isnull(t.total_insurance_credit,0)as total_insurance_credit,isnull(t.total_factory_share,0)as total_factory_share,isnull(t.total_income,0)as total_income,isnull(t.number_of_patients_bought,0)as number_of_patients_bought
+					into #tmp_grouped_m
+					from #tmp_medicine as m left join #tmp_grouped as t on(m.medicine_ID=t.medicine_ID)
+					
+					--insert
+					insert into Pharmacy.factMonthlyMedicine
+					select i.insuranceCompany_ID,isnull(t.medicine_code,-1)as medicine_code,isnull(t.medicine_ID,-1)as medicine_ID,isnull(t.medicineFactory_ID,-1)as medicineFactory_ID,@temp_cur_datekey,isnull(t.total_number_bought,0)as total_number_bought,isnull(t.total_paid_price,0)as total_paid_price,isnull(t.total_real_price,0)as total_real_price,isnull(t.total_insurance_credit,0)as total_insurance_credit,isnull(t.total_factory_share,0)as total_factory_share,isnull(t.total_income,0)as total_income,isnull(t.number_of_patients_bought,0)as number_of_patients_bought
+					from dbo.dimInsuranceCompanies as i left join #tmp_grouped_m as t on(i.insuranceCompany_ID=t.insuranceCompany_ID)
+
+					--truncate tmps
+					truncate table #tmp_transactions;
+					truncate table #tmp_grouped;
+					truncate table #tmp_active_medicine;
+					truncate table #tmp_medicine;
+					truncate table #tmp_grouped_m;
+
+					insert into Logs values
+					(GETDATE(),'Pharmacy.factMonthlyMedicine',1,'Records of '+convert(varchar,@temp_cur_date)+' inserted',@@ROWCOUNT);
+					
+					--add a day 
+					set @temp_cur_date=DATEADD(month, 1, @temp_cur_date);
+					
+				end try
+				begin catch
+					insert into Logs values
+					(GETDATE(),'Pharmacy.factMonthlyMedicine',0,'ERROR : Records of '+convert(varchar,@temp_cur_date)+' may not inserted',@@ROWCOUNT);
+				end catch
+			end
+			--drop tables
+				drop table #tmp_transactions;
+				drop table #tmp_grouped;
+				drop table #tmp_active_medicine;
+				drop table #tmp_medicine;
+				drop table #tmp_grouped_m;
+
+			insert into Logs values
+			(GETDATE(),'Pharmacy.factMonthlyMedicine',1,'New Records inserted',@@ROWCOUNT);
+		end try
+		begin catch
+			insert into Logs values
+			(GETDATE(),'Pharmacy.factMonthlyMedicine',0,'ERROR : New Records may not inserted',@@ROWCOUNT);
+		end catch
+	end
+go
+
