@@ -44,7 +44,7 @@ CREATE OR ALTER PROCEDURE Clinic.dimDepartments_FirstLoader
 				FROM HospitalSA.dbo.Departments
 		---------------------------------------------------
 			INSERT INTO [dbo].[Logs]
-				([date]
+				([DATE]
 				,[table_name]
 				,[status]
 				,[description]
@@ -53,12 +53,12 @@ CREATE OR ALTER PROCEDURE Clinic.dimDepartments_FirstLoader
 				(GETDATE()
 				,'dimDepartments'
 				,1
-				,'inserting new values was successfull'
+				,'inserting new VALUES was successfull'
 				,@@ROWCOUNT)
 		END TRY
 		BEGIN CATCH
-			INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [description], [affected_rows])
-			VALUES (GETDATE(), 'dimDepartments', 0, 'Error while inserting or updating', @@ROWCOUNT);
+			INSERT INTO HospitalDW.dbo.Logs([DATE], [table_name], [status], [description], [affected_rows])
+			VALUES (GETDATE(), 'dimDepartments', 0, 'Error WHILE inserting OR updating', @@ROWCOUNT);
 			SELECT ERROR_MESSAGE() AS ErrorMessage
 		END CATCH
 	END
@@ -88,7 +88,7 @@ CREATE OR ALTER PROCEDURE Clinic.dimDoctorContracts_FirstLoader
 				FROM HospitalSA.DoctorContracts
 			---------------------------------------------------
 			INSERT INTO [dbo].[Logs]
-				([date]
+				([DATE]
 				,[table_name]
 				,[status]
 				,[description]
@@ -97,12 +97,12 @@ CREATE OR ALTER PROCEDURE Clinic.dimDoctorContracts_FirstLoader
 				(GETDATE()
 				,'dimDoctorContracts'
 				,1
-				,'inserting new values was successfull'
+				,'inserting new VALUES was successfull'
 				,@@ROWCOUNT)
 		END TRY
 		BEGIN CATCH
-			INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [description], [affected_rows])
-			VALUES (GETDATE(), 'dimDoctorContracts', 0, 'Error while inserting or updating', @@ROWCOUNT);
+			INSERT INTO HospitalDW.dbo.Logs([DATE], [table_name], [status], [description], [affected_rows])
+			VALUES (GETDATE(), 'dimDoctorContracts', 0, 'Error WHILE inserting OR updating', @@ROWCOUNT);
 			SELECT ERROR_MESSAGE() AS ErrorMessage
 		END CATCH
 	END
@@ -215,7 +215,7 @@ CREATE OR ALTER PROCEDURE Clinic.dimDoctors_FirstLoader @curr_date DATE
 				ON doc.department_ID = dep.department_ID
 			---------------------------------------------------
 			INSERT INTO [dbo].[Logs]
-				([date]
+				([DATE]
 				,[table_name]
 				,[status]
 				,[description]
@@ -224,12 +224,12 @@ CREATE OR ALTER PROCEDURE Clinic.dimDoctors_FirstLoader @curr_date DATE
 				(GETDATE()
 				,'dimDoctors'
 				,1
-				,'inserting new values was successfull'
+				,'inserting new VALUES was successfull'
 				,@@ROWCOUNT)
 		END TRY
 		BEGIN CATCH 
-			INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [description], [affected_rows])
-			VALUES (GETDATE(), 'dimDoctors', 0, 'Error while inserting or updating', @@ROWCOUNT);
+			INSERT INTO HospitalDW.dbo.Logs([DATE], [table_name], [status], [description], [affected_rows])
+			VALUES (GETDATE(), 'dimDoctors', 0, 'Error WHILE inserting OR updating', @@ROWCOUNT);
 			SELECT ERROR_MESSAGE() AS ErrorMessage
 		END CATCH
 	END
@@ -252,7 +252,7 @@ CREATE OR ALTER PROCEDURE Clinic.dimIllnessTypes_FirstLoader
 				FROM HospitalSA.IllnessTypes
 			---------------------------------------------------
 			INSERT INTO [dbo].[Logs]
-				([date]
+				([DATE]
 				,[table_name]
 				,[status]
 				,[description]
@@ -261,12 +261,12 @@ CREATE OR ALTER PROCEDURE Clinic.dimIllnessTypes_FirstLoader
 				(GETDATE()
 				,'dimIllnessTypes'
 				,1
-				,'inserting new values was successfull'
+				,'inserting new VALUES was successfull'
 				,@@ROWCOUNT)
 		END TRY
 		BEGIN CATCH
-			INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [description], [affected_rows])
-			VALUES (GETDATE(), 'dimIllnessTypes', 0, 'Error while inserting or updating', @@ROWCOUNT);
+			INSERT INTO HospitalDW.dbo.Logs([DATE], [table_name], [status], [description], [affected_rows])
+			VALUES (GETDATE(), 'dimIllnessTypes', 0, 'Error WHILE inserting OR updating', @@ROWCOUNT);
 			SELECT ERROR_MESSAGE() AS ErrorMessage
 		END CATCH
 	END
@@ -302,7 +302,7 @@ CREATE OR ALTER PROCEDURE Clinic.dimIllnesses_FirstLoader
 				ON i.illnessType_ID = it.illnessType_ID
 			---------------------------------------------------
 			INSERT INTO [dbo].[Logs]
-				([date]
+				([DATE]
 				,[table_name]
 				,[status]
 				,[description]
@@ -311,12 +311,12 @@ CREATE OR ALTER PROCEDURE Clinic.dimIllnesses_FirstLoader
 				(GETDATE()
 				,'dimIllnesses'
 				,1
-				,'inserting new values was successfull'
+				,'inserting new VALUES was successfull'
 				,@@ROWCOUNT)
 		END TRY
 		BEGIN CATCH 
-			INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [description], [affected_rows])
-			VALUES (GETDATE(), 'dimIllnesses', 0, 'Error while inserting or updating', @@ROWCOUNT);
+			INSERT INTO HospitalDW.dbo.Logs([DATE], [table_name], [status], [description], [affected_rows])
+			VALUES (GETDATE(), 'dimIllnesses', 0, 'Error WHILE inserting OR updating', @@ROWCOUNT);
 			SELECT ERROR_MESSAGE() AS ErrorMessage
 		END CATCH
 	END
@@ -412,7 +412,7 @@ CREATE OR ALTER PROCEDURE Clinic.dimDepartments_Loader @curr_date DATE
 			);
 		---------------------------------------------------
 			INSERT INTO [dbo].[Logs]
-				([date]
+				([DATE]
 				,[table_name]
 				,[status]
 				,[description]
@@ -421,12 +421,12 @@ CREATE OR ALTER PROCEDURE Clinic.dimDepartments_Loader @curr_date DATE
 				(GETDATE()
 				,'dimDepartments'
 				,1
-				,'inserting new values was successfull'
+				,'inserting new VALUES was successfull'
 				,@@ROWCOUNT)
 		END TRY
 		BEGIN CATCH
-			INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [description], [affected_rows])
-			VALUES (GETDATE(), 'dimDepartments', 0, 'Error while inserting or updating', @@ROWCOUNT);
+			INSERT INTO HospitalDW.dbo.Logs([DATE], [table_name], [status], [description], [affected_rows])
+			VALUES (GETDATE(), 'dimDepartments', 0, 'Error WHILE inserting OR updating', @@ROWCOUNT);
 			SELECT ERROR_MESSAGE() AS ErrorMessage
 		END CATCH
 	END
@@ -464,7 +464,7 @@ CREATE OR ALTER PROCEDURE Clinic.dimDoctorContracts_Loader
 			);
 			---------------------------------------------------
 			INSERT INTO [dbo].[Logs]
-				([date]
+				([DATE]
 				,[table_name]
 				,[status]
 				,[description]
@@ -473,12 +473,12 @@ CREATE OR ALTER PROCEDURE Clinic.dimDoctorContracts_Loader
 				(GETDATE()
 				,'dimDoctorContracts'
 				,1
-				,'inserting new values was successfull'
+				,'inserting new VALUES was successfull'
 				,@@ROWCOUNT)
 		END TRY
 		BEGIN CATCH
-			INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [description], [affected_rows])
-			VALUES (GETDATE(), 'dimDoctorContracts', 0, 'Error while inserting or updating', @@ROWCOUNT);
+			INSERT INTO HospitalDW.dbo.Logs([DATE], [table_name], [status], [description], [affected_rows])
+			VALUES (GETDATE(), 'dimDoctorContracts', 0, 'Error WHILE inserting OR updating', @@ROWCOUNT);
 			SELECT ERROR_MESSAGE() AS ErrorMessage
 		END CATCH
 	END
@@ -674,7 +674,7 @@ CREATE OR ALTER PROCEDURE Clinic.dimDoctors_Loader @curr_date DATE
 			DROP TABLE #tmp;
 			---------------------------------------------------
 			INSERT INTO [dbo].[Logs]
-				([date]
+				([DATE]
 				,[table_name]
 				,[status]
 				,[description]
@@ -683,12 +683,12 @@ CREATE OR ALTER PROCEDURE Clinic.dimDoctors_Loader @curr_date DATE
 				(GETDATE()
 				,'dimDoctors'
 				,1
-				,'inserting new values was successfull'
+				,'inserting new VALUES was successfull'
 				,@@ROWCOUNT + @RowAffected)
 		END TRY
 		BEGIN CATCH 
-			INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [description], [affected_rows])
-			VALUES (GETDATE(), 'dimDoctors', 0, 'Error while inserting or updating', @@ROWCOUNT + @RowAffected);
+			INSERT INTO HospitalDW.dbo.Logs([DATE], [table_name], [status], [description], [affected_rows])
+			VALUES (GETDATE(), 'dimDoctors', 0, 'Error WHILE inserting OR updating', @@ROWCOUNT + @RowAffected);
 			SELECT ERROR_MESSAGE() AS ErrorMessage
 		END CATCH
 	END
@@ -715,7 +715,7 @@ CREATE OR ALTER PROCEDURE Clinic.dimIllnessTypes_Loader
 			);
 			---------------------------------------------------
 			INSERT INTO [dbo].[Logs]
-				([date]
+				([DATE]
 				,[table_name]
 				,[status]
 				,[description]
@@ -724,12 +724,12 @@ CREATE OR ALTER PROCEDURE Clinic.dimIllnessTypes_Loader
 				(GETDATE()
 				,'dimIllnessTypes'
 				,1
-				,'inserting new values was successfull'
+				,'inserting new VALUES was successfull'
 				,@@ROWCOUNT)
 		END TRY
 		BEGIN CATCH
-			INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [description], [affected_rows])
-			VALUES (GETDATE(), 'dimIllnessTypes', 0, 'Error while inserting or updating', @@ROWCOUNT);
+			INSERT INTO HospitalDW.dbo.Logs([DATE], [table_name], [status], [description], [affected_rows])
+			VALUES (GETDATE(), 'dimIllnessTypes', 0, 'Error WHILE inserting OR updating', @@ROWCOUNT);
 			SELECT ERROR_MESSAGE() AS ErrorMessage
 		END CATCH
 	END
@@ -773,7 +773,7 @@ CREATE OR ALTER PROCEDURE Clinic.dimIllnesses_Loader
 			DROP TABLE #tmp;
 			---------------------------------------------------
 			INSERT INTO [dbo].[Logs]
-				([date]
+				([DATE]
 				,[table_name]
 				,[status]
 				,[description]
@@ -782,12 +782,12 @@ CREATE OR ALTER PROCEDURE Clinic.dimIllnesses_Loader
 				(GETDATE()
 				,'dimIllnesses'
 				,1
-				,'inserting new values was successfull'
+				,'inserting new VALUES was successfull'
 				,@@ROWCOUNT)
 		END TRY
 		BEGIN CATCH 
-			INSERT INTO HospitalDW.dbo.Logs([date], [table_name], [status], [description], [affected_rows])
-			VALUES (GETDATE(), 'dimIllnesses', 0, 'Error while inserting or updating', @@ROWCOUNT);
+			INSERT INTO HospitalDW.dbo.Logs([DATE], [table_name], [status], [description], [affected_rows])
+			VALUES (GETDATE(), 'dimIllnesses', 0, 'Error WHILE inserting OR updating', @@ROWCOUNT);
 			SELECT ERROR_MESSAGE() AS ErrorMessage
 		END CATCH
 	END
@@ -796,3 +796,197 @@ GO
 ---------------------------------------------
 -- Clinic Mart : Facts
 ---------------------------------------------
+CREATE OR ALTER PROCEDURE Clinic.factTransactionAppointment_FirstLoader @curr_date DATE
+	AS
+	BEGIN
+		BEGIN TRY
+			DECLARE @curr_date_key INT;
+			DECLARE @end_date DATE;
+
+			SET @end_date = (
+				SELECT MAX(appointment_date)
+				FROM HospitalSA.dbo.Appointments
+			);
+			
+			--loop in days
+			WHILE @curr_date < @end_date BEGIN
+				BEGIN TRY
+					--find TimeKey
+					SET @curr_date_key = (
+						SELECT TimeKey
+						FROM dbo.dimDate
+						WHERE FullDateAlternateKey = @curr_date
+					);
+
+					SELECT ISNULL(patient_ID,-1) AS patient_ID,
+						   ISNULL(doctor_ID,-1) AS doctor_ID,
+						   ISNULL(main_detected_illness,-1) AS main_detected_illness,
+						   price,
+						   doctor_share,
+						   insurance_share,
+						   payment_method,
+						   payment_method_description,
+						   credit_card_number,
+						   payer,
+						   payer_phone_number,
+						   additional_info 
+					INTO #tmp_today_appointments
+					FROM HospitalSA.dbo.Appointments
+					WHERE appointment_date = @curr_date
+					
+					SELECT p.patient_code,
+						   p.patient_ID,
+						   p.insurance_ID,
+						   i.insuranceCompany_ID
+					INTO #tmp_patient_info
+					FROM dbo.dimPatients p 
+						INNER JOIN dbo.dimInsurances i 
+						ON p.insurance_ID = i.insurance_ID
+					WHERE p.[start_date] <= @curr_date 
+						AND (p.current_flag = 1 
+							 OR p.end_date > @curr_date);
+					
+					SELECT patient_ID,
+						   doctor_code,
+						   doctor_ID,
+						   doctorContract_ID,
+						   department_ID,
+						   main_detected_illness,
+						   price,
+						   doctor_share,
+						   insurance_share,
+						   payment_method,
+						   payment_method_description,
+						   credit_card_number,
+						   payer,
+						   payer_phone_number,
+						   additional_info 
+					INTO #tmp1
+					FROM Clinic.dimDoctors d
+						INNER JOIN #tmp_today_appointments a
+						ON d.doctor_ID = a.doctor_ID
+					WHERE [start_date] <= @curr_date 
+						AND (current_flag = 1 
+							 OR end_date > @curr_date);
+
+					SELECT p.patient_code,
+						   p.patient_ID,
+						   p.insurance_ID,
+						   p.insuranceCompany_ID
+						   doctor_code,
+						   doctor_ID,
+						   doctorContract_ID,
+						   department_ID,
+						   main_detected_illness,
+						   price,
+						   doctor_share,
+						   insurance_share,
+						   payment_method,
+						   payment_method_description,
+						   credit_card_number,
+						   payer,
+						   payer_phone_number,
+						   additional_info 
+					INTO #tmp2
+					FROM #tmp_patient_info p
+						INNER JOIN #tmp1 d
+						ON d.patient_ID = p.patient_ID
+
+					SELECT p.patient_code,
+						   p.patient_ID,
+						   p.insurance_ID,
+						   p.insuranceCompany_ID
+						   doctor_code,
+						   doctor_ID,
+						   doctorContract_ID,
+						   department_ID,
+						   main_detected_illness,
+						   i.illnessType_ID,
+						   @curr_date_key AS TimeKey,
+						   ---------------
+						   price - insurance_share AS paid_price,
+						   price AS real_price,
+						   doctor_share,
+						   insurance_share,
+						   price - doctor_share AS income,
+						   payment_method,
+						   payment_method_description,
+						   credit_card_number,
+						   payer,
+						   payer_phone_number,
+						   additional_info 
+					INTO #tmp3
+					FROM #tmp2 t
+						INNER JOIN Clinic.dimIllnesses i
+						ON i.illness_ID = t.main_detected_illness
+
+					INSERT INTO Clinic.factTransactionAppointment
+						SELECT patient_code,
+						   patient_ID,
+						   insurance_ID,
+						   insuranceCompany_ID
+						   doctor_code,
+						   doctor_ID,
+						   doctorContract_ID,
+						   department_ID,
+						   main_detected_illness,
+						   illnessType_ID,
+						   TimeKey,
+						   ---------------
+						   paid_price,
+						   real_price,
+						   doctor_share,
+						   insurance_share,
+						   income,
+						   payment_method,
+						   payment_method_description,
+						   credit_card_number,
+						   payer,
+						   payer_phone_number,
+						   additional_info 
+						FROM #tmp3
+					--------------------------------------------
+					INSERT INTO Logs
+					VALUES (GETDATE(),
+							'Clinic.factTransactionAppointment',
+							1,
+							'Transactions of '+CONVERT(VARCHAR,@curr_date)+' inserted',
+							@@ROWCOUNT);
+					
+					--add a day 
+					SET @curr_date = DATEADD(DAY, 1, @curr_date);
+
+					--drop temporary tables
+					DROP TABLE #tmp_today_appointments
+					DROP TABLE #tmp_patient_info
+					DROP TABLE #tmp1
+					DROP TABLE #tmp2
+					DROP TABLE #tmp3
+
+				END TRY
+				BEGIN CATCH
+					INSERT INTO Logs 
+					VALUES (GETDATE(),
+							'Clinic.factTransactionAppointment',
+							0,
+							'ERROR : Transactions of '+CONVERT(VARCHAR,@curr_date)+' may not inserted',
+							@@ROWCOUNT);
+				END CATCH
+			END 
+			INSERT INTO Logs 
+			VALUES (GETDATE(),
+					'Clinic.factTransactionAppointment',
+					1,
+					'New Transactions inserted',
+					@@ROWCOUNT);
+		END TRY
+		BEGIN CATCH
+			INSERT INTO Logs 
+			VALUES (GETDATE(),
+					'Clinic.factTransactionAppointment',
+					0,
+					'ERROR : New Transactions may not inserted',
+					@@ROWCOUNT);
+		END CATCH
+	END
+GO
