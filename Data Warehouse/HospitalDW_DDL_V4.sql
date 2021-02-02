@@ -344,7 +344,7 @@ create table Clinic.factDailyAppointment (
 	-------------------------------
 	total_paied_price				int,
 	total_real_price				int,
-	total_insurance_credit		int,
+	total_insurance_share		int,
 	total_doctor_share			int,
 	total_income					int,
 	number_of_patient			int
@@ -360,7 +360,7 @@ create table Clinic.factMonthlyAppointment (
 	-------------------------------
 	total_paied_price				int,
 	total_real_price				int,
-	total_insurance_credit		int,
+	total_insurance_share		int,
 	total_doctor_share			int,
 	total_income					int,
 	number_of_patient			int,
@@ -378,7 +378,7 @@ create table Clinic.factAccumulativeAppointment (
 	-------------------------------
 	total_paied_price				int,
 	total_real_price				int,
-	total_insurance_credit		int,
+	total_insurance_share		int,
 	total_doctor_share			int,
 	total_income					int,
 	number_of_patient			int,
