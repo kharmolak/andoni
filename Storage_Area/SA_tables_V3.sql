@@ -15,7 +15,6 @@ use HospitalSA
 go
 
 exec sp_changedbowner 'sa'
-go
 
 create table InsuranceCompanies(
 insuranceCompany_ID int primary key,
