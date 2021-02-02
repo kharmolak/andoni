@@ -353,10 +353,7 @@ create table Clinic.factMonthlyAppointment (
 	total_insurance_credit		int,
 	total_doctor_share			int,
 	total_income					int,
-	number_of_patient			int,
-	max_visit_per_day			int,
-	min_visit_per_day			int,
-	avg_visit_per_day				int,
+	number_of_patient			int
 )
 go
 
@@ -371,10 +368,7 @@ create table Clinic.factAccumulativeAppointment (
 	total_insurance_credit		int,
 	total_doctor_share			int,
 	total_income					int,
-	number_of_patient			int,
-	max_visit_per_month		int,
-	min_visit_per_month		int,
-	avg_visit_per_month		int,
+	number_of_patient			int
 )
 go
 
