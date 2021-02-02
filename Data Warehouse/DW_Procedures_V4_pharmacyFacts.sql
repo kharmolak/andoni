@@ -226,7 +226,7 @@ create or alter procedure  Pharmacy.factMonthlyMedicine_FirstLoader
 	begin
 		begin try
 			declare @small_curr_date date;--loop in days
-			declare @small_curr_datekey date;
+			declare @small_curr_datekey int;
 			declare @temp_cur_date date;--loop in month
 			declare @temp_cur_datekey int;
 			declare @end_month_datekey int;
@@ -355,7 +355,7 @@ create or alter procedure  Pharmacy.factMonthlyMedicine_Loader
 	begin
 		begin try
 			declare @small_curr_date date;--loop in days
-			declare @small_curr_datekey date;
+			declare @small_curr_datekey int;
 			declare @temp_cur_date date;--loop in month
 			declare @temp_cur_datekey int;
 			declare @end_month_datekey int;
@@ -491,89 +491,74 @@ go
 ------------------------------------------------------
 ------------------------------------------------------
 
-create or alter procedure  Pharmacy.factAccumulativeMedicine_FirstLoader @temp_cur_date date
+create or alter procedure  Pharmacy.factAccumulativeMedicine_FirstLoader 
 	as 
 	begin
 		begin try
+			declare @temp_cur_date date;
 			declare @temp_cur_datekey int;
-			declare @end_month_date date;
-			declare @last_month_datekey int;
-			declare @end_month_datekey int;
 			declare @end_date date;
 			declare @end_datekey int;
-			declare @month_count int;
 
 			--set end_date and current_date
 			set @end_date=(
 				select max(order_date)
 				from HospitalSA.dbo.MedicineOrderHeaders
 			);
+			SET @temp_cur_date=(
+				SELECT min(order_date)
+				FROM [HospitalSA].[dbo].[MedicineOrderHeaders]
+			);
 
-			set @end_datekey=(select TimeKey from dimDate where FullDateAlternateKey=@end_date);
-			set @last_month_datekey=(select max(TimeKey) from Pharmacy.factMonthlyMedicine);
-			set @end_month_date=(select DATEADD(month, 1, FullDateAlternateKey) from dimDate where TimeKey=@last_month_datekey);
-			set @end_month_datekey=(select TimeKey from dimDate where FullDateAlternateKey=@end_month_date);
-			set @month_count=(select count(TimeKey) from Pharmacy.factMonthlyMedicine);
+			--kartezian
+			select i.insuranceCompany_ID,m.medicine_code,m.medicine_ID,m.medicineFactory_ID,0 as total_number_bought,0 as total_paid_price,
+					0 as total_real_price,0 as total_insurance_credit, 0 as total_factory_share,0 as total_income,0 as number_of_patients_bought
+			into #temp1
+			from dbo.dimInsuranceCompanies as i,Pharmacy.dimMedicines as m
+			where i.insuranceCompany_ID<>-1 and m.medicine_code<>-1 and m.current_flag=1
 
-			if(@month_count>0)begin
-				--months aggregation
-				select insuranceCompany_ID,medicine_ID,medicineFactory_ID,sum(total_number_bought)as total_number_bought,sum(total_paid_price)as total_paid_price,sum(total_real_price)as total_real_price,
-						sum(total_insurance_credit)as total_insurance_credit,sum(total_factory_share)as total_factory_share,sum(total_income)as total_income,sum(number_of_patients_bought)as number_of_patients_bought
-				into #tmp_month_grouped
-				from Pharmacy.factMonthlyMedicine
+			while @temp_cur_date<@end_date begin
+				--curr datekey
+				set @temp_cur_datekey=(select TimeKey from dbo.dimDate where FullDateAlternateKey=@temp_cur_date);
+
+				--this day transactions
+				select insuranceCompany_ID,medicine_ID,medicineFactory_ID,sum(number_of_units_bought)as total_number_bought,sum(paid_price) as total_paid_price,
+						sum(real_price)as total_real_price,sum(insurance_credit)as total_insurance_credit,sum(factory_share)as total_factory_share,
+						sum(income)as total_income, count(patient_ID) as number_of_patients_bought
+				into #temp2
+				from Pharmacy.factTransactionalMedicine
+				where TimeKey=@temp_cur_datekey
 				group by insuranceCompany_ID,medicine_ID,medicineFactory_ID;
 
-				--join month aggr with active medicine code
-				select insuranceCompany_ID,medicine_code,t.medicine_ID,t.medicineFactory_ID,total_number_bought,total_paid_price,total_real_price,total_insurance_credit,total_factory_share,total_income,number_of_patients_bought
-				into #tmp_month_grouped_mc
-				from  Pharmacy.dimMedicines as m left join #tmp_month_grouped as t  on(t.medicine_ID=m.medicine_ID and m.current_flag=1)
+				--
+				select *
+				into #temp3
+				from #temp1
+				--
+				truncate table #temp1
 
-				--external transactions
-				select insuranceCompany_ID,medicine_ID,medicineFactory_ID,sum(number_of_units_bought)as total_number_bought,sum(paid_price)as total_paid_price,sum(real_price)as total_real_price,
-						sum(insurance_credit)as total_insurance_credit,sum(factory_share)as total_factory_share,sum(income)as total_income,count(patient_ID)as number_of_patients_bought
-				into #tmp_tans_grouped
-				from Pharmacy.factTransactionalMedicine
-				where TimeKey<@end_datekey and TimeKey>=@end_month_datekey;
-
-				--truncate
-				truncate table Pharmacy.factAccumulativeMedicine;
-
-				--insert 
-				insert into Pharmacy.factAccumulativeMedicine
-				select m.insuranceCompany_ID,m.medicine_code,m.medicine_ID,m.medicineFactory_ID,isnull(t.total_number_bought,0)+m.total_number_bought,isnull(t.total_paid_price,0)+m.total_paid_price,
-						isnull(t.total_real_price,0)+m.total_real_price,isnull(t.total_insurance_credit,0)+m.total_insurance_credit,isnull(t.total_factory_share,0)+m.total_factory_share,isnull(t.total_income,0)+m.total_income,
-						isnull(t.number_of_patients_bought,0)+m.number_of_patients_bought
-				from #tmp_month_grouped_mc as m left join #tmp_tans_grouped as t on(m.insuranceCompany_ID=t.insuranceCompany_ID and t.medicine_ID=m.medicine_ID and t.medicineFactory_ID=m.medicineFactory_ID)
+				insert into #temp1
+				select s.insuranceCompany_ID,s.medicine_code,s.medicine_ID,s.medicineFactory_ID,isnull(n.total_number_bought,0)+s.total_number_bought,isnull(n.total_paid_price,0)+s.total_paid_price ,
+						isnull(n.total_real_price,0)+s.total_real_price,isnull(n.total_insurance_credit,0)+s.total_insurance_credit,isnull(n.total_factory_share,0)+s.total_factory_share ,
+						isnull(n.total_income,0)+s.total_income, isnull(n.number_of_patients_bought,0)+s.number_of_patients_bought
+				from #temp3 as s left join #temp2 as n on(s.insuranceCompany_ID=n.insuranceCompany_ID and s.medicine_ID=n.medicine_ID and s.medicineFactory_ID=n.medicineFactory_ID)
 			
-				--drop tables
-				drop table #tmp_month_grouped;
-				drop table #tmp_month_grouped_mc;
-				drop table #tmp_tans_grouped;
+				--add day
+				set @temp_cur_date=DATEADD(day, 1, @temp_cur_date);
+			
 			end
-			else begin
-				--group by
-				select insuranceCompany_ID,medicine_ID,medicineFactory_ID,sum(number_of_units_bought)as total_number_bought,sum(paid_price)as total_paid_price,sum(real_price)as total_real_price,sum(insurance_credit)as total_insurance_credit,sum(factory_share)as total_factory_share,sum(income)as total_income,count(patient_ID)as number_of_patients_bought
-				into #tmp_grouped
-				from Pharmacy.factTransactionalMedicine
-				group by insuranceCompany_ID,medicine_ID,medicineFactory_ID;
 
-				--all Medicines
-				select isnull(t.insuranceCompany_ID,-1) as insuranceCompany_ID ,m.medicine_code,m.medicine_ID,m.medicineFactory_ID,isnull(t.total_number_bought,0)as total_number_bought,isnull(t.total_paid_price,0)as total_paid_price,isnull(t.total_real_price,0)as total_real_price,isnull(t.total_insurance_credit,0)as total_insurance_credit,isnull(t.total_factory_share,0)as total_factory_share,isnull(t.total_income,0)as total_income,isnull(t.number_of_patients_bought,0)as number_of_patients_bought
-				into #tmp_grouped_m
-				from Pharmacy.dimMedicines as m left join #tmp_grouped as t on(m.medicine_ID=t.medicine_ID and m.current_flag=1)
-					
-				--truncate
-				truncate table Pharmacy.factAccumulativeMedicine;
+			--insert to fact
+			insert into Pharmacy.factAccumulativeMedicine
+			select insuranceCompany_ID,medicine_code,medicine_ID,medicineFactory_ID,total_number_bought,total_paid_price,
+					total_real_price,total_insurance_credit,total_factory_share,total_income,number_of_patients_bought
+			from #temp1;
 
-				--insert
-				insert into Pharmacy.factAccumulativeMedicine
-				select i.insuranceCompany_ID,isnull(t.medicine_code,-1)as medicine_code,isnull(t.medicine_ID,-1)as medicine_ID,isnull(t.medicineFactory_ID,-1)as medicineFactory_ID,@temp_cur_datekey,isnull(t.total_number_bought,0)as total_number_bought,isnull(t.total_paid_price,0)as total_paid_price,isnull(t.total_real_price,0)as total_real_price,isnull(t.total_insurance_credit,0)as total_insurance_credit,isnull(t.total_factory_share,0)as total_factory_share,isnull(t.total_income,0)as total_income,isnull(t.number_of_patients_bought,0)as number_of_patients_bought
-				from dbo.dimInsuranceCompanies as i left join #tmp_grouped_m as t on(i.insuranceCompany_ID=t.insuranceCompany_ID)
+			--drop tables
+			drop table #temp1;
+			drop table #temp2;
+			drop table #temp3;
 
-				--drop tables
-				drop table #tmp_grouped;
-				drop table #tmp_grouped_m;
-			end		
 			insert into Logs values
 			(GETDATE(),'Pharmacy.factAccumulativeMedicine',1,'New Records inserted',@@ROWCOUNT);
 		end try
@@ -587,38 +572,75 @@ go
 ------------------------------------------------------
 ------------------------------------------------------
 
-create or alter procedure  Pharmacy.factAccumulativeMedicine_Loader @temp_cur_date date
+create or alter procedure  Pharmacy.factAccumulativeMedicine_Loader @cur_date date
 	as 
 	begin
 		begin try
+			declare @temp_cur_date date;
 			declare @temp_cur_datekey int;
-			declare @end_datekey int;
 			declare @end_date date;
+			declare @end_datekey int;
 
 			--set end_date and current_date
 			set @end_date=(
 				select max(order_date)
 				from HospitalSA.dbo.MedicineOrderHeaders
 			);
-			set @end_datekey=(select TimeKey from dimDate where FullDateAlternateKey=@end_date);
-			set @temp_cur_datekey=(select TimeKey from dimDate where FullDateAlternateKey=@temp_cur_date);
+			set @temp_cur_date=@cur_date;
+
+			--kartezian
+			select i.insuranceCompany_ID,m.medicine_code,m.medicine_ID,m.medicineFactory_ID
+			into #kartezian
+			from dbo.dimInsuranceCompanies as i,Pharmacy.dimMedicines as m
+			where i.insuranceCompany_ID<>-1 and m.medicine_code<>-1 and m.current_flag=1
+
+			--#temp1
+			select k.insuranceCompany_ID,k.medicine_code,k.medicine_ID,k.medicineFactory_ID,isnull( total_number_bought,0)as total_number_bought, isnull( total_paid_price,0)as total_paid_price,
+					isnull(total_real_price,0) as total_real_price,isnull(total_insurance_credit,0) as total_insurance_credit, isnull(total_factory_share,0) as total_factory_share,isnull(total_income,0) as total_income,isnull(number_of_patients_bought,0) as number_of_patients_bought
+			into #temp1
+			from #kartezian as k left join Pharmacy.factAccumulativeMedicine as a on(k.insuranceCompany_ID=a.insuranceCompany_ID and k.medicine_ID=a.medicine_ID and k.medicineFactory_ID=a.medicineFactory_ID)
+
+			while @temp_cur_date<@end_date begin
+				--curr datekey
+				set @temp_cur_datekey=(select TimeKey from dbo.dimDate where FullDateAlternateKey=@temp_cur_date);
+
+				--this day transactions
+				select insuranceCompany_ID,medicine_ID,medicineFactory_ID,sum(number_of_units_bought)as total_number_bought,sum(paid_price) as total_paid_price,
+						sum(real_price)as total_real_price,sum(insurance_credit)as total_insurance_credit,sum(factory_share)as total_factory_share,
+						sum(income)as total_income, count(patient_ID) as number_of_patients_bought
+				into #temp2
+				from Pharmacy.factTransactionalMedicine
+				where TimeKey=@temp_cur_datekey
+				group by insuranceCompany_ID,medicine_ID,medicineFactory_ID;
+
+				--
+				select *
+				into #temp3
+				from #temp1
+				--
+				truncate table #temp1
+
+				insert into #temp1
+				select s.insuranceCompany_ID,s.medicine_code,s.medicine_ID,s.medicineFactory_ID,isnull(n.total_number_bought,0)+s.total_number_bought,isnull(n.total_paid_price,0)+s.total_paid_price ,
+						isnull(n.total_real_price,0)+s.total_real_price,isnull(n.total_insurance_credit,0)+s.total_insurance_credit,isnull(n.total_factory_share,0)+s.total_factory_share ,
+						isnull(n.total_income,0)+s.total_income, isnull(n.number_of_patients_bought,0)+s.number_of_patients_bought
+				from #temp3 as s left join #temp2 as n on(s.insuranceCompany_ID=n.insuranceCompany_ID and s.medicine_ID=n.medicine_ID and s.medicineFactory_ID=n.medicineFactory_ID)
 			
-			
-			--groupby
-			select insuranceCompany_ID,medicine_ID,medicineFactory_ID,sum(number_of_units_bought)as total_number_bought,sum(paid_price)as total_paid_price,sum(real_price)as total_real_price,sum(insurance_credit)as total_insurance_credit,sum(factory_share)as total_factory_share,sum(income)as total_income,count(patient_ID)as number_of_patients_bought
-			into #tmp_grouped
-			from Pharmacy.factTransactionalMedicine
-			where TimeKey>=@temp_cur_datekey and TimeKey<@end_datekey
-			group by insuranceCompany_ID,medicine_ID,medicineFactory_ID;
-			
-			
+				--add day
+				set @temp_cur_date=DATEADD(day, 1, @temp_cur_date);
+
 			end
+
+			--insert to fact
+			insert into Pharmacy.factAccumulativeMedicine
+			select insuranceCompany_ID,medicine_code,medicine_ID,medicineFactory_ID,total_number_bought,total_paid_price,
+					total_real_price,total_insurance_credit,total_factory_share,total_income,number_of_patients_bought
+			from #temp1;
+
 			--drop tables
-				drop table #tmp_transactions;
-				drop table #tmp_grouped;
-				drop table #tmp_active_medicine;
-				drop table #tmp_medicine;
-				drop table #tmp_grouped_m;
+			drop table #temp1;
+			drop table #temp2;
+			drop table #temp3;
 
 			insert into Logs values
 			(GETDATE(),'Pharmacy.factMonthlyMedicine',1,'New Records inserted',@@ROWCOUNT);
@@ -630,3 +652,106 @@ create or alter procedure  Pharmacy.factAccumulativeMedicine_Loader @temp_cur_da
 	end
 go
 
+------------------------------------------------------
+------------------------------------------------------
+------------------------------------------------------
+------------------------------------------------------
+
+create or alter procedure Pharmacy.FirstLoad as
+begin
+	begin try
+		declare @curr_date date;
+		SET @curr_date=(
+					SELECT min(order_date)
+					FROM [HospitalSA].[dbo].[MedicineOrderHeaders]
+				);
+		exec Pharmacy.dimMedicineFactory_FirstLoader @curr_date;
+		exec Pharmacy.dimMedicines_FirstLoader @curr_date;
+		exec Pharmacy.factTransactionalMedicine_FirstLoader;
+		exec Pharmacy.factMonthlyMedicine_FirstLoader;
+		exec Pharmacy.factAccumulativeMedicine_FirstLoader;
+
+		INSERT INTO [dbo].[Logs](
+				[date]
+				,[table_name]
+				,[status]
+				,[description]
+				,[affected_rows]
+			)VALUES(
+				GETDATE()
+				,'Pharmacy Tables'
+				,1
+				,'First Load insertions was successful'
+				,@@ROWCOUNT
+			);
+	end try
+	begin catch
+		INSERT INTO [dbo].[Logs](
+				[date]
+				,[table_name]
+				,[status]
+				,[description]
+				,[affected_rows]
+			)VALUES(
+				GETDATE()
+				,'Pharmacy Tables'
+				,0
+				,'ERROR : First Load insertions FAILED'
+				,@@ROWCOUNT
+			);
+	end catch
+
+end
+go
+
+------------------------------------------------------
+------------------------------------------------------
+
+create or alter procedure Pharmacy.[Load] as
+begin
+	begin try
+		declare @curr_date date;
+		declare @curr_datekey int;
+		SET @curr_datekey=(
+					SELECT max(TimeKey)
+					FROM Pharmacy.[factTransactionalMedicine]
+				);
+		set @curr_date=(select DATEADD(day, 1, FullDateAlternateKey) from dbo.dimDate where TimeKey=@curr_datekey);
+
+		exec Pharmacy.dimMedicineFactory_Loader @curr_date;
+		exec Pharmacy.dimMedicines_Loader @curr_date;
+		exec Pharmacy.factTransactionalMedicine_Loader;
+		exec Pharmacy.factMonthlyMedicine_Loader;
+		exec Pharmacy.factAccumulativeMedicine_Loader @curr_date;
+
+		INSERT INTO [dbo].[Logs](
+				[date]
+				,[table_name]
+				,[status]
+				,[description]
+				,[affected_rows]
+			)VALUES(
+				GETDATE()
+				,'Pharmacy Tables'
+				,1
+				,'Load insertions was successful'
+				,@@ROWCOUNT
+			);
+	end try
+	begin catch
+		INSERT INTO [dbo].[Logs](
+				[date]
+				,[table_name]
+				,[status]
+				,[description]
+				,[affected_rows]
+			)VALUES(
+				GETDATE()
+				,'Pharmacy Tables'
+				,0
+				,'ERROR : Load insertions FAILED'
+				,@@ROWCOUNT
+			);
+	end catch
+
+end
