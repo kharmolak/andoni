@@ -321,6 +321,7 @@ CREATE OR ALTER PROCEDURE dimPatients_FirstLoader @curr_date date
 		BEGIN TRY
 			TRUNCATE TABLE HospitalDW.dbo.dimPatients;
 			-- CREATE A RECORD WITH -1 KEY-ID 
+			SET IDENTITY_INSERT HospitalDW.dbo.dimPatients ON;
 			INSERT INTO HospitalDW.dbo.dimPatients(
 				[patient_code]
 				,[patient_ID]
@@ -364,6 +365,7 @@ CREATE OR ALTER PROCEDURE dimPatients_FirstLoader @curr_date date
 				1
 			)
 			-------------------------------------------------
+			SET IDENTITY_INSERT HospitalDW.dbo.dimPatients Off;
 			INSERT INTO HospitalDW.dbo.dimPatients(
 				[patient_ID]
 				,[national_code]
@@ -559,7 +561,7 @@ create or alter procedure Pharmacy.dimMedicineFactory_FirstLoader @curr_date dat
 	as
 	begin
 		begin try 
-			truncate table HospitalDW.Pharmacy.MedicineFactories
+			truncate table HospitalDW.Pharmacy.dimMedicineFactories
 			insert into HospitalDW.Pharmacy.dimMedicineFactories 
 			select 
 				[medicineFactory_ID],
@@ -701,8 +703,9 @@ CREATE OR ALTER PROCEDURE Pharmacy.dimMedicines_FirstLoader @curr_date DATE
 	AS 
 	BEGIN
 		BEGIN TRY
-			TRUNCATE TABLE HospitalDW.Pharmacy.Medicines;
+			TRUNCATE TABLE HospitalDW.Pharmacy.dimMedicines;
 			-- CREATE A RECORD WITH -1 KEY-ID 
+			SET IDENTITY_INSERT HospitalDW.Pharmacy.dimMedicines ON;
 			INSERT INTO HospitalDW.Pharmacy.dimMedicines(
 				[medicine_code]
 				,[medicine_ID]
@@ -746,6 +749,7 @@ CREATE OR ALTER PROCEDURE Pharmacy.dimMedicines_FirstLoader @curr_date DATE
 				,-1
 				,'Nothing'
 			)
+			SET IDENTITY_INSERT HospitalDW.Pharmacy.dimMedicines Off;
 			INSERT INTO HospitalDW.Pharmacy.dimMedicines(
 				[medicine_ID]
 				,[name]
@@ -986,12 +990,12 @@ create or alter procedure  Pharmacy.factTransactionalMedicine_FirstLoader
 					select a.patient_code,a.patient_ID,a.insurance_ID,a.insuranceCompany_ID,m.medicine_code,m.medicine_ID,m.medicineFactory_ID,@temp_cur_datekey,m.total_count,m.paid_price,m.total_price,m.insurance_credit,m.factory_share,m.income
 					from #tmp_grouped_medicine as m inner join #active_patient as a on(m.patient_ID=a.patient_ID)
 
-					--truncate
-					truncate table #tmp_order;
-					truncate table #tmp_grouped;
-					truncate table #active_medicine;
-					truncate table #tmp_grouped_medicine;
-					truncate table #active_patient;
+					--drop table 
+					drop table #tmp_order;
+					drop table #tmp_grouped;
+					drop table #active_medicine;
+					drop table #tmp_grouped_medicine;
+					drop table #active_patient;
 
 					insert into Logs values
 					(GETDATE(),'Pharmacy.MedicineTransactionFact',1,'Transactions of '+convert(varchar,@temp_cur_date)+' inserted',@@ROWCOUNT);
@@ -1006,12 +1010,7 @@ create or alter procedure  Pharmacy.factTransactionalMedicine_FirstLoader
 				end catch
 			end
 			
-			--drop table 
-			drop table #tmp_order;
-			drop table #tmp_grouped;
-			drop table #active_medicine;
-			drop table #tmp_grouped_medicine;
-			drop table #active_patient;
+			
 
 			insert into Logs values
 			(GETDATE(),'Pharmacy.MedicineTransactionFact',1,'New Transactions inserted',@@ROWCOUNT);
@@ -1094,12 +1093,12 @@ create or alter procedure  Pharmacy.factTransactionalMedicine_Loader
 					select a.patient_code,a.patient_ID,a.insurance_ID,a.insuranceCompany_ID,m.medicine_code,m.medicine_ID,m.medicineFactory_ID,@temp_cur_datekey,m.total_count,m.paid_price,m.total_price,m.insurance_credit,m.factory_share,m.income
 					from #tmp_grouped_medicine as m inner join #active_patient as a on(m.patient_ID=a.patient_ID)
 
-					--truncate
-					truncate table #tmp_order;
-					truncate table #tmp_grouped;
-					truncate table #active_medicine;
-					truncate table #tmp_grouped_medicine;
-					truncate table #active_patient;
+					--drop table 
+					drop table #tmp_order;
+					drop table #tmp_grouped;
+					drop table #active_medicine;
+					drop table #tmp_grouped_medicine;
+					drop table #active_patient;
 
 					insert into Logs values
 					(GETDATE(),'Pharmacy.MedicineTransactionFact',1,'Transactions of '+convert(varchar,@temp_cur_date)+' inserted',@@ROWCOUNT);
@@ -1114,12 +1113,7 @@ create or alter procedure  Pharmacy.factTransactionalMedicine_Loader
 				end catch
 			end
 			
-			--drop table 
-			drop table #tmp_order;
-			drop table #tmp_grouped;
-			drop table #active_medicine;
-			drop table #tmp_grouped_medicine;
-			drop table #active_patient;
+			
 
 			insert into Logs values
 			(GETDATE(),'Pharmacy.MedicineTransactionFact',1,'New Transactions inserted',@@ROWCOUNT);
@@ -1173,12 +1167,29 @@ create or alter procedure  Pharmacy.factMonthlyMedicine_FirstLoader
 
 					set @small_curr_date=@temp_cur_date;
 					set @small_curr_datekey=@temp_cur_datekey;
+
+					--transactions of this day
+						select insuranceCompany_ID,medicine_ID,medicineFactory_ID,sum(number_of_units_bought)as total_number_bought,sum(paid_price)as total_paid_price,sum(real_price)as total_real_price,sum(insurance_credit)as total_insurance_credit,sum(factory_share)as total_factory_share,sum(income)as total_income,count(patient_ID)as number_of_patients_bought
+						into #tmp_grouped_day
+						from Pharmacy.factTransactionalMedicine
+						where TimeKey=@small_curr_datekey
+						group by insuranceCompany_ID,medicine_ID,medicineFactory_ID;
+
+						--add day
+						set @small_curr_date=DATEADD(day, 1, @small_curr_date);
+						set @small_curr_datekey=(
+							select TimeKey
+							from dbo.dimDate
+							where FullDateAlternateKey=@small_curr_date
+						);
+
 					--loop in days
 					while @small_curr_date<DATEADD(month, 1, @temp_cur_date) begin
 						
 						--transactions of this day
+						insert into  #tmp_grouped_day
 						select insuranceCompany_ID,medicine_ID,medicineFactory_ID,sum(number_of_units_bought)as total_number_bought,sum(paid_price)as total_paid_price,sum(real_price)as total_real_price,sum(insurance_credit)as total_insurance_credit,sum(factory_share)as total_factory_share,sum(income)as total_income,count(patient_ID)as number_of_patients_bought
-						into #tmp_grouped_day
+						
 						from Pharmacy.factTransactionalMedicine
 						where TimeKey=@small_curr_datekey
 						group by insuranceCompany_ID,medicine_ID,medicineFactory_ID;
@@ -1222,12 +1233,12 @@ create or alter procedure  Pharmacy.factMonthlyMedicine_FirstLoader
 					select i.insuranceCompany_ID,i.medicine_code,i.medicine_ID,i.medicineFactory_ID,@temp_cur_datekey,isnull(t.total_number_bought,0)as total_number_bought,isnull(t.total_paid_price,0)as total_paid_price,isnull(t.total_real_price,0)as total_real_price,isnull(t.total_insurance_credit,0)as total_insurance_credit,isnull(t.total_factory_share,0)as total_factory_share,isnull(t.total_income,0)as total_income,isnull(t.number_of_patients_bought,0)as number_of_patients_bought
 					from #tmp_kartezian as i left join #tmp_grouped as t on(i.insuranceCompany_ID=t.insuranceCompany_ID and t.medicine_ID=i.medicine_ID and t.medicineFactory_ID=i.medicineFactory_ID)
 
-					--truncate tmps
-					truncate table #tmp_grouped_day;
-					truncate table #tmp_grouped;
-					truncate table #tmp_active_medicine;
-					truncate table #tmp_medicine;
-					truncate table #tmp_kartezian;
+					--drop tables
+				drop table #tmp_grouped_day;
+				drop table #tmp_grouped;
+				drop table #tmp_active_medicine;
+				drop table #tmp_medicine;
+				drop table #tmp_kartezian;
 
 					insert into Logs values
 					(GETDATE(),'Pharmacy.factMonthlyMedicine',1,'Records of '+convert(varchar,@temp_cur_date)+' inserted',@@ROWCOUNT);
@@ -1241,12 +1252,7 @@ create or alter procedure  Pharmacy.factMonthlyMedicine_FirstLoader
 					(GETDATE(),'Pharmacy.factMonthlyMedicine',0,'ERROR : Records of '+convert(varchar,@temp_cur_date)+' may not inserted',@@ROWCOUNT);
 				end catch
 			end
-			--drop tables
-				drop table #tmp_grouped_day;
-				drop table #tmp_grouped;
-				drop table #tmp_active_medicine;
-				drop table #tmp_medicine;
-				drop table #tmp_kartezian;
+			
 
 			insert into Logs values
 			(GETDATE(),'Pharmacy.factMonthlyMedicine',1,'New Records inserted',@@ROWCOUNT);
@@ -1312,12 +1318,28 @@ create or alter procedure  Pharmacy.factMonthlyMedicine_Loader
 
 					set @small_curr_date=@temp_cur_date;
 					set @small_curr_datekey=@temp_cur_datekey;
+					--transactions of this day
+						select insuranceCompany_ID,medicine_ID,medicineFactory_ID,sum(number_of_units_bought)as total_number_bought,sum(paid_price)as total_paid_price,sum(real_price)as total_real_price,sum(insurance_credit)as total_insurance_credit,sum(factory_share)as total_factory_share,sum(income)as total_income,count(patient_ID)as number_of_patients_bought
+						into #tmp_grouped_day
+						from Pharmacy.factTransactionalMedicine
+						where TimeKey=@small_curr_datekey
+						group by insuranceCompany_ID,medicine_ID,medicineFactory_ID;
+
+						--add day
+						set @small_curr_date=DATEADD(day, 1, @small_curr_date);
+						set @small_curr_datekey=(
+							select TimeKey
+							from dbo.dimDate
+							where FullDateAlternateKey=@small_curr_date
+						);
+
 					--loop in days
 					while @small_curr_date<DATEADD(month, 1, @temp_cur_date) begin
 						
 						--transactions of this day
+						insert into  #tmp_grouped_day
 						select insuranceCompany_ID,medicine_ID,medicineFactory_ID,sum(number_of_units_bought)as total_number_bought,sum(paid_price)as total_paid_price,sum(real_price)as total_real_price,sum(insurance_credit)as total_insurance_credit,sum(factory_share)as total_factory_share,sum(income)as total_income,count(patient_ID)as number_of_patients_bought
-						into #tmp_grouped_day
+						
 						from Pharmacy.factTransactionalMedicine
 						where TimeKey=@small_curr_datekey
 						group by insuranceCompany_ID,medicine_ID,medicineFactory_ID;
@@ -1361,12 +1383,12 @@ create or alter procedure  Pharmacy.factMonthlyMedicine_Loader
 					select i.insuranceCompany_ID,i.medicine_code,i.medicine_ID,i.medicineFactory_ID,@temp_cur_datekey,isnull(t.total_number_bought,0)as total_number_bought,isnull(t.total_paid_price,0)as total_paid_price,isnull(t.total_real_price,0)as total_real_price,isnull(t.total_insurance_credit,0)as total_insurance_credit,isnull(t.total_factory_share,0)as total_factory_share,isnull(t.total_income,0)as total_income,isnull(t.number_of_patients_bought,0)as number_of_patients_bought
 					from #tmp_kartezian as i left join #tmp_grouped as t on(i.insuranceCompany_ID=t.insuranceCompany_ID and t.medicine_ID=i.medicine_ID and t.medicineFactory_ID=i.medicineFactory_ID)
 
-					--truncate tmps
-					truncate table #tmp_grouped_day;
-					truncate table #tmp_grouped;
-					truncate table #tmp_active_medicine;
-					truncate table #tmp_medicine;
-					truncate table #tmp_kartezian;
+					--drop tables
+				drop table #tmp_grouped_day;
+				drop table #tmp_grouped;
+				drop table #tmp_active_medicine;
+				drop table #tmp_medicine;
+				drop table #tmp_kartezian;
 
 					insert into Logs values
 					(GETDATE(),'Pharmacy.factMonthlyMedicine',1,'Records of '+convert(varchar,@temp_cur_date)+' inserted',@@ROWCOUNT);
@@ -1380,12 +1402,7 @@ create or alter procedure  Pharmacy.factMonthlyMedicine_Loader
 					(GETDATE(),'Pharmacy.factMonthlyMedicine',0,'ERROR : Records of '+convert(varchar,@temp_cur_date)+' may not inserted',@@ROWCOUNT);
 				end catch
 			end
-			--drop tables
-				drop table #tmp_grouped_day;
-				drop table #tmp_grouped;
-				drop table #tmp_active_medicine;
-				drop table #tmp_medicine;
-				drop table #tmp_kartezian;
+		
 
 			insert into Logs values
 			(GETDATE(),'Pharmacy.factMonthlyMedicine',1,'New Records inserted',@@ROWCOUNT);
@@ -1424,8 +1441,7 @@ create or alter procedure  Pharmacy.factAccumulativeMedicine_FirstLoader
 			from dbo.dimInsuranceCompanies as i,Pharmacy.dimMedicines as m
 			where i.insuranceCompany_ID<>-1 and m.medicine_code<>-1 and m.current_flag=1
 
-			while @temp_cur_date<@end_date begin
-				--curr datekey
+			--curr datekey
 				set @temp_cur_datekey=(select TimeKey from dbo.dimDate where FullDateAlternateKey=@temp_cur_date);
 
 				--this day transactions
@@ -1452,6 +1468,39 @@ create or alter procedure  Pharmacy.factAccumulativeMedicine_FirstLoader
 			
 				--add day
 				set @temp_cur_date=DATEADD(day, 1, @temp_cur_date);
+			
+
+			while @temp_cur_date<@end_date begin
+				--curr datekey
+				set @temp_cur_datekey=(select TimeKey from dbo.dimDate where FullDateAlternateKey=@temp_cur_date);
+
+				--this day transactions
+				insert into #temp2
+				select insuranceCompany_ID,medicine_ID,medicineFactory_ID,sum(number_of_units_bought)as total_number_bought,sum(paid_price) as total_paid_price,
+						sum(real_price)as total_real_price,sum(insurance_credit)as total_insurance_credit,sum(factory_share)as total_factory_share,
+						sum(income)as total_income, count(patient_ID) as number_of_patients_bought
+				
+				from Pharmacy.factTransactionalMedicine
+				where TimeKey=@temp_cur_datekey
+				group by insuranceCompany_ID,medicine_ID,medicineFactory_ID;
+
+				--
+				insert into #temp3
+				select *
+				
+				from #temp1
+				--
+				truncate table #temp1
+
+				insert into #temp1
+				select s.insuranceCompany_ID,s.medicine_code,s.medicine_ID,s.medicineFactory_ID,isnull(n.total_number_bought,0)+s.total_number_bought,isnull(n.total_paid_price,0)+s.total_paid_price ,
+						isnull(n.total_real_price,0)+s.total_real_price,isnull(n.total_insurance_credit,0)+s.total_insurance_credit,isnull(n.total_factory_share,0)+s.total_factory_share ,
+						isnull(n.total_income,0)+s.total_income, isnull(n.number_of_patients_bought,0)+s.number_of_patients_bought
+				from #temp3 as s left join #temp2 as n on(s.insuranceCompany_ID=n.insuranceCompany_ID and s.medicine_ID=n.medicine_ID and s.medicineFactory_ID=n.medicineFactory_ID)
+			
+				--add day
+				set @temp_cur_date=DATEADD(day, 1, @temp_cur_date);
+
 			
 			end
 
@@ -1505,8 +1554,7 @@ create or alter procedure  Pharmacy.factAccumulativeMedicine_Loader @cur_date da
 			into #temp1
 			from #kartezian as k left join Pharmacy.factAccumulativeMedicine as a on(k.insuranceCompany_ID=a.insuranceCompany_ID and k.medicine_ID=a.medicine_ID and k.medicineFactory_ID=a.medicineFactory_ID)
 
-			while @temp_cur_date<@end_date begin
-				--curr datekey
+			--curr datekey
 				set @temp_cur_datekey=(select TimeKey from dbo.dimDate where FullDateAlternateKey=@temp_cur_date);
 
 				--this day transactions
@@ -1521,6 +1569,38 @@ create or alter procedure  Pharmacy.factAccumulativeMedicine_Loader @cur_date da
 				--
 				select *
 				into #temp3
+				from #temp1
+				--
+				truncate table #temp1
+
+				insert into #temp1
+				select s.insuranceCompany_ID,s.medicine_code,s.medicine_ID,s.medicineFactory_ID,isnull(n.total_number_bought,0)+s.total_number_bought,isnull(n.total_paid_price,0)+s.total_paid_price ,
+						isnull(n.total_real_price,0)+s.total_real_price,isnull(n.total_insurance_credit,0)+s.total_insurance_credit,isnull(n.total_factory_share,0)+s.total_factory_share ,
+						isnull(n.total_income,0)+s.total_income, isnull(n.number_of_patients_bought,0)+s.number_of_patients_bought
+				from #temp3 as s left join #temp2 as n on(s.insuranceCompany_ID=n.insuranceCompany_ID and s.medicine_ID=n.medicine_ID and s.medicineFactory_ID=n.medicineFactory_ID)
+			
+				--add day
+				set @temp_cur_date=DATEADD(day, 1, @temp_cur_date);
+
+
+			while @temp_cur_date<@end_date begin
+				--curr datekey
+				set @temp_cur_datekey=(select TimeKey from dbo.dimDate where FullDateAlternateKey=@temp_cur_date);
+
+				--this day transactions
+				insert into #temp2
+				select insuranceCompany_ID,medicine_ID,medicineFactory_ID,sum(number_of_units_bought)as total_number_bought,sum(paid_price) as total_paid_price,
+						sum(real_price)as total_real_price,sum(insurance_credit)as total_insurance_credit,sum(factory_share)as total_factory_share,
+						sum(income)as total_income, count(patient_ID) as number_of_patients_bought
+				
+				from Pharmacy.factTransactionalMedicine
+				where TimeKey=@temp_cur_datekey
+				group by insuranceCompany_ID,medicine_ID,medicineFactory_ID;
+
+				--
+				insert into #temp3
+				select *
+				
 				from #temp1
 				--
 				truncate table #temp1
@@ -1572,7 +1652,7 @@ begin
 		exec Pharmacy.dimMedicines_FirstLoader @curr_date;
 		exec Pharmacy.factTransactionalMedicine_FirstLoader;
 		exec Pharmacy.factMonthlyMedicine_FirstLoader;
-		exec Pharmacy.factAccumulativeMedicine_FirstLoader;
+		--exec Pharmacy.factAccumulativeMedicine_FirstLoader;
 
 		INSERT INTO [dbo].[Logs](
 				[date]
@@ -1736,7 +1816,7 @@ CREATE OR ALTER PROCEDURE Clinic.dimDoctorContracts_FirstLoader
 						,[active]
 						,[active_description]
 						,[additional_info]
-				FROM HospitalSA.DoctorContracts
+				FROM HospitalSA.dbo.DoctorContracts
 			---------------------------------------------------
 			INSERT INTO [dbo].[Logs]
 				([DATE]
@@ -1855,14 +1935,14 @@ CREATE OR ALTER PROCEDURE Clinic.dimDoctors_FirstLoader @curr_date DATE
 						,[marital_status_description]
 						,[postal_code]
 						,[address]
-						,[additional_info]
+						,doc.[additional_info]
 						,@curr_date
 						,NULL
 						,1
 						,0 AS [Contract_Degree]
 						,'First Load'
-				FROM HospitalSA.Doctors doc 
-				INNER JOIN HospitalSA.Departments dep 
+				FROM HospitalSA.dbo.Doctors doc 
+				INNER JOIN HospitalSA.dbo.Departments dep 
 				ON doc.department_ID = dep.department_ID
 			---------------------------------------------------
 			INSERT INTO [dbo].[Logs]
@@ -1900,7 +1980,7 @@ CREATE OR ALTER PROCEDURE Clinic.dimIllnessTypes_FirstLoader
 						,[name]
 						,[description]
 						,[related_department_ID]
-				FROM HospitalSA.IllnessTypes
+				FROM HospitalSA.dbo.IllnessTypes
 			---------------------------------------------------
 			INSERT INTO [dbo].[Logs]
 				([DATE]
@@ -1935,7 +2015,7 @@ CREATE OR ALTER PROCEDURE Clinic.dimIllnesses_FirstLoader
 
 			INSERT INTO Clinic.dimIllnesses
 				SELECT   [illness_ID]
-						,[name]
+						,i.[name]
 						,i.[illnessType_ID]
 						,it.[name] AS [illnessType_name]
 						,[scientific_name]
@@ -1945,8 +2025,8 @@ CREATE OR ALTER PROCEDURE Clinic.dimIllnesses_FirstLoader
 						,[killing_description]
 						,[chronic]
 						,[chronic_description]
-				FROM HospitalSA.Illnesses i
-				INNER JOIN HospitalSA.IllnessTypes it
+				FROM HospitalSA.dbo.Illnesses i
+				INNER JOIN HospitalSA.dbo.IllnessTypes it
 				ON i.illnessType_ID = it.illnessType_ID
 			---------------------------------------------------
 			INSERT INTO [dbo].[Logs]
@@ -2145,7 +2225,7 @@ CREATE OR ALTER PROCEDURE Clinic.dimDoctors_Loader @curr_date DATE
 					,[birthdate]
 					,[phone_number]
 					,doc.[department_ID]
-					,dep.[name]
+					,dep.[name] as [department_name]
 					,[education_degree]
 					,[specialty_description]
 					,[graduation_date]
@@ -2157,15 +2237,15 @@ CREATE OR ALTER PROCEDURE Clinic.dimDoctors_Loader @curr_date DATE
 					,[marital_status_description]
 					,[postal_code]
 					,[address]
-					,[additional_info]
-					,[start_date]
-					,[end_date]
-					,[current_flag]
-					,[Contract_Degree]
-					,[Contract_Degree_description]
+					,doc.[additional_info]
+					,@curr_date as [start_date]
+					,NULL as[end_date]
+					,1 as [current_flag]
+					,0 as [Contract_Degree]
+					,'FirstLoad'as [Contract_Degree_description]
 			INTO #tmp
-			FROM HospitalSA.Doctors doc
-			INNER JOIN HospitalSA.Departments dep
+			FROM HospitalSA.dbo.Doctors doc
+			INNER JOIN HospitalSA.dbo.Departments dep
 			ON doc.department_ID = dep.department_ID
 
 			MERGE INTO Clinic.dimDoctors AS dw
@@ -2295,9 +2375,6 @@ CREATE OR ALTER PROCEDURE Clinic.dimDoctors_Loader @curr_date DATE
 						,sa.[specialty_description]
 						,sa.[graduation_date]
 						,sa.[university]
-						,sa.[contract_start_date]
-						,sa.[contract_end_date]
-						,sa.[appointment_portion]
 						,sa.[gender]
 						,sa.[religion]
 						,sa.[nationality]
@@ -2385,18 +2462,19 @@ CREATE OR ALTER PROCEDURE Clinic.dimIllnesses_Loader
 	BEGIN
 		BEGIN TRY 
 			SELECT [illness_ID]
-					,[name]
+					,i.[name]
 					,i.[illnessType_ID]
 					,it.[name] AS [illnessType_name]
 					,[scientific_name]
 					,[special_illness]
+					,[special_illness_description]
 					,[killing_status]
 					,[killing_description]
 					,[chronic]
 					,[chronic_description]
 			INTO #tmp
-			FROM HospitalSA.Illnesses i
-			INNER JOIN HospitalSA.IllnessTypes it
+			FROM HospitalSA.dbo.Illnesses i
+			INNER JOIN HospitalSA.dbo.IllnessTypes it
 			ON i.illnessType_ID = it.illnessType_ID
 
 			MERGE Clinic.dimIllnesses AS dw
@@ -2404,15 +2482,27 @@ CREATE OR ALTER PROCEDURE Clinic.dimIllnesses_Loader
 			ON dw.illness_ID = sa.illness_ID
 			WHEN NOT MATCHED BY TARGET 
 			THEN INSERT (
-				 [illnessType_ID]
+				[illness_ID]
 				,[name]
-				,[description]
-				,[related_department_ID]
+				,[illnessType_ID]
+				,[scientific_name]
+				,[special_illness]
+				,[special_illness_description]
+				,[killing_status]
+				,[killing_description]
+				,[chronic]
+				,[chronic_description]
 			) VALUES (
-				 sa.[illnessType_ID]
-				,sa.[name]
-				,sa.[description]
-				,sa.[related_department_ID]
+				 [illness_ID]
+				,[name]
+				,[illnessType_ID]
+				,[scientific_name]
+				,[special_illness]
+				,[special_illness_description]
+				,[killing_status]
+				,[killing_description]
+				,[chronic]
+				,[chronic_description]
 			);
 
 			DROP TABLE #tmp;
@@ -2460,7 +2550,7 @@ CREATE OR ALTER PROCEDURE Clinic.factTransactionAppointment_FirstLoader
 				FROM HospitalSA.dbo.Appointments
 			);
 			
-			TRUNCATE TABLE factTransactionAppointment
+			TRUNCATE TABLE Clinic.factTransactionAppointment
 
 			--loop in days
 			WHILE @curr_date < @end_date BEGIN
@@ -2502,7 +2592,7 @@ CREATE OR ALTER PROCEDURE Clinic.factTransactionAppointment_FirstLoader
 					
 					SELECT patient_ID,
 						   doctor_code,
-						   doctor_ID,
+						   d.doctor_ID,
 						   doctorContract_ID,
 						   department_ID,
 						   main_detected_illness,
@@ -2514,7 +2604,7 @@ CREATE OR ALTER PROCEDURE Clinic.factTransactionAppointment_FirstLoader
 						   credit_card_number,
 						   payer,
 						   payer_phone_number,
-						   additional_info 
+						   a.additional_info 
 					INTO #tmp1
 					FROM Clinic.dimDoctors d
 						INNER JOIN #tmp_today_appointments a
@@ -2526,7 +2616,7 @@ CREATE OR ALTER PROCEDURE Clinic.factTransactionAppointment_FirstLoader
 					SELECT p.patient_code,
 						   p.patient_ID,
 						   p.insurance_ID,
-						   p.insuranceCompany_ID
+						   p.insuranceCompany_ID,
 						   doctor_code,
 						   doctor_ID,
 						   doctorContract_ID,
@@ -2546,10 +2636,10 @@ CREATE OR ALTER PROCEDURE Clinic.factTransactionAppointment_FirstLoader
 						INNER JOIN #tmp1 d
 						ON d.patient_ID = p.patient_ID
 
-					SELECT p.patient_code,
-						   p.patient_ID,
-						   p.insurance_ID,
-						   p.insuranceCompany_ID
+					SELECT t.patient_code,
+						   t.patient_ID,
+						   t.insurance_ID,
+						   t.insuranceCompany_ID,
 						   doctor_code,
 						   doctor_ID,
 						   doctorContract_ID,
@@ -2578,7 +2668,7 @@ CREATE OR ALTER PROCEDURE Clinic.factTransactionAppointment_FirstLoader
 						SELECT patient_code,
 						   patient_ID,
 						   insurance_ID,
-						   insuranceCompany_ID
+						   insuranceCompany_ID,
 						   doctor_code,
 						   doctor_ID,
 						   doctorContract_ID,
@@ -2683,7 +2773,7 @@ CREATE OR ALTER PROCEDURE Clinic.factDailyAppointment_FirstLoader
 				 ,Clinic.dimIllnesses ill
 			WHERE d.current_flag = 1
 
-			TRUNCATE TABLE factDailyAppointment
+			TRUNCATE TABLE Clinic.factDailyAppointment
 
 			--loop in days
 			WHILE @curr_date < @end_date BEGIN
@@ -2722,13 +2812,13 @@ CREATE OR ALTER PROCEDURE Clinic.factDailyAppointment_FirstLoader
 							,[TimeKey]
 					
 					INSERT INTO Clinic.factDailyAppointment
-						SELECT   [insuranceCompany_ID]
-								,[doctor_code]
-								,[doctor_ID]
-								,[doctorContract_ID]
-								,[department_ID]
-								,[main_detected_illness]
-								,[illnessType_ID]
+						SELECT   td.[insuranceCompany_ID]
+								,td.[doctor_code]
+								,td.[doctor_ID]
+								,td.[doctorContract_ID]
+								,td.[department_ID]
+								,td.[main_detected_illness]
+								,td.[illnessType_ID]
 								,@curr_date_key
 								,ISNULL(total_paied_price,0)
 								,ISNULL(total_real_price,0)
@@ -2830,7 +2920,7 @@ CREATE OR ALTER PROCEDURE Clinic.factAccumulativeAppointment_FirstLoader
 				 ,Clinic.dimDoctors d
 			WHERE d.current_flag = 1
 
-			TRUNCATE TABLE factAccumulativeAppointment
+			TRUNCATE TABLE Clinic.factAccumulativeAppointment
 
 			--loop in days
 			WHILE @curr_date < @end_date BEGIN
@@ -2875,16 +2965,16 @@ CREATE OR ALTER PROCEDURE Clinic.factAccumulativeAppointment_FirstLoader
 							,a.number_of_patient + d.number_of_patient AS number_of_patient
 					INTO #tmp_acc_current_date
 					FROM #tmp_dim_cartesian a
-						INNER JOIN tmp_current_date_daily d
+						INNER JOIN #tmp_current_date_daily d
 						ON (a.[insuranceCompany_ID] = d.[insuranceCompany_ID]
 						   AND a.[doctor_code] = d.[doctor_code]
 						   AND a.[doctor_ID] = d.[doctor_ID]
 						   AND a.[doctorContract_ID] = d.[doctorContract_ID]
 						   AND a.[department_ID] = d.[department_ID])
 					
-					TRUNCATE TABLE #tmp_dim_cartesian
+					truncate TABLE #tmp_dim_cartesian;
 
-					INSERT INTO #tmp_dim_cartesian
+					insert INTO #tmp_dim_cartesian
 						SELECT 	[insuranceCompany_ID]
 								,[doctor_code]
 								,[doctor_ID]
@@ -2896,6 +2986,7 @@ CREATE OR ALTER PROCEDURE Clinic.factAccumulativeAppointment_FirstLoader
 								,total_doctor_share
 								,total_income
 								,number_of_patient
+						
 						FROM #tmp_acc_current_date
 					--------------------------------------------
 					INSERT INTO Logs
@@ -2948,14 +3039,14 @@ CREATE OR ALTER PROCEDURE Clinic.factAccumulativeAppointment_FirstLoader
 	END
 GO
 
-CREATE OR ALTER PROCEDURE Clinic.factlessPatientIlnesses_FirstLoader
+CREATE OR ALTER PROCEDURE Clinic.factlessPatientIllnesses_FirstLoader
 AS
 	BEGIN
 		BEGIN TRY
-			TRUNCATE TABLE Clinic.factlessPatientIlnesses
+			TRUNCATE TABLE Clinic.factlessPatientIllnesses
 
 
-			INSERT INTO Clinic.factlessPatientIlnesses
+			INSERT INTO Clinic.factlessPatientIllnesses
 				SELECT 	[patient_code]
 						,i.[patient_ID]
 						,[illness_ID]
@@ -2972,14 +3063,14 @@ AS
 				,[affected_rows])
 			VALUES
 				(GETDATE()
-				,'factlessPatientIlnesses'
+				,'factlessPatientIllnesses'
 				,1
 				,'inserting new VALUES was successfull'
 				,@@ROWCOUNT)
 		END TRY
 		BEGIN CATCH
 			INSERT INTO HospitalDW.dbo.Logs([DATE], [table_name], [status], [description], [affected_rows])
-			VALUES (GETDATE(), 'factlessPatientIlnesses', 0, 'Error WHILE inserting OR updating', @@ROWCOUNT);
+			VALUES (GETDATE(), 'factlessPatientIllnesses', 0, 'Error WHILE inserting OR updating', @@ROWCOUNT);
 			SELECT ERROR_MESSAGE() AS ErrorMessage
 		END CATCH
 	END
@@ -3045,7 +3136,7 @@ CREATE OR ALTER PROCEDURE Clinic.factTransactionAppointment_Loader
 					
 					SELECT patient_ID,
 						   doctor_code,
-						   doctor_ID,
+						   d.doctor_ID,
 						   doctorContract_ID,
 						   department_ID,
 						   main_detected_illness,
@@ -3057,7 +3148,7 @@ CREATE OR ALTER PROCEDURE Clinic.factTransactionAppointment_Loader
 						   credit_card_number,
 						   payer,
 						   payer_phone_number,
-						   additional_info 
+						   a.additional_info 
 					INTO #tmp1
 					FROM Clinic.dimDoctors d
 						INNER JOIN #tmp_today_appointments a
@@ -3069,7 +3160,7 @@ CREATE OR ALTER PROCEDURE Clinic.factTransactionAppointment_Loader
 					SELECT p.patient_code,
 						   p.patient_ID,
 						   p.insurance_ID,
-						   p.insuranceCompany_ID
+						   p.insuranceCompany_ID,
 						   doctor_code,
 						   doctor_ID,
 						   doctorContract_ID,
@@ -3089,10 +3180,10 @@ CREATE OR ALTER PROCEDURE Clinic.factTransactionAppointment_Loader
 						INNER JOIN #tmp1 d
 						ON d.patient_ID = p.patient_ID
 
-					SELECT p.patient_code,
-						   p.patient_ID,
-						   p.insurance_ID,
-						   p.insuranceCompany_ID
+					SELECT t.patient_code,
+						   t.patient_ID,
+						   t.insurance_ID,
+						   t.insuranceCompany_ID,
 						   doctor_code,
 						   doctor_ID,
 						   doctorContract_ID,
@@ -3121,7 +3212,7 @@ CREATE OR ALTER PROCEDURE Clinic.factTransactionAppointment_Loader
 						SELECT patient_code,
 						   patient_ID,
 						   insurance_ID,
-						   insuranceCompany_ID
+						   insuranceCompany_ID,
 						   doctor_code,
 						   doctor_ID,
 						   doctorContract_ID,
@@ -3264,13 +3355,13 @@ CREATE OR ALTER PROCEDURE Clinic.factDailyAppointment_Loader
 							,[TimeKey]
 					
 					INSERT INTO Clinic.factDailyAppointment
-						SELECT   [insuranceCompany_ID]
-								,[doctor_code]
-								,[doctor_ID]
-								,[doctorContract_ID]
-								,[department_ID]
-								,[main_detected_illness]
-								,[illnessType_ID]
+						SELECT   td.[insuranceCompany_ID]
+								,td.[doctor_code]
+								,td.[doctor_ID]
+								,td.[doctorContract_ID]
+								,td.[department_ID]
+								,td.[main_detected_illness]
+								,td.[illnessType_ID]
 								,@curr_date_key
 								,ISNULL(total_paied_price,0)
 								,ISNULL(total_real_price,0)
@@ -3412,16 +3503,16 @@ CREATE OR ALTER PROCEDURE Clinic.factAccumulativeAppointment_Loader @cur_date DA
 							,a.number_of_patient + d.number_of_patient AS number_of_patient
 					INTO #tmp_acc_current_date
 					FROM #tmp_dim_cartesian a
-						INNER JOIN tmp_current_date_daily d
+						INNER JOIN #tmp_current_date_daily d
 						ON (a.[insuranceCompany_ID] = d.[insuranceCompany_ID]
 						   AND a.[doctor_code] = d.[doctor_code]
 						   AND a.[doctor_ID] = d.[doctor_ID]
 						   AND a.[doctorContract_ID] = d.[doctorContract_ID]
 						   AND a.[department_ID] = d.[department_ID])
 					
-					TRUNCATE TABLE #tmp_dim_cartesian;
+					truncate TABLE #tmp_dim_cartesian;
 
-					INSERT INTO #tmp_dim_cartesian
+					insert INTO #tmp_dim_cartesian
 						SELECT 	[insuranceCompany_ID]
 								,[doctor_code]
 								,[doctor_ID]
@@ -3433,6 +3524,7 @@ CREATE OR ALTER PROCEDURE Clinic.factAccumulativeAppointment_Loader @cur_date DA
 								,total_doctor_share
 								,total_income
 								,number_of_patient
+							
 						FROM #tmp_acc_current_date
 					--------------------------------------------
 					INSERT INTO Logs
@@ -3485,14 +3577,14 @@ CREATE OR ALTER PROCEDURE Clinic.factAccumulativeAppointment_Loader @cur_date DA
 	END
 GO
 
-CREATE OR ALTER PROCEDURE Clinic.factlessPatientIlnesses_Loader
+CREATE OR ALTER PROCEDURE Clinic.factlessPatientIllnesses_Loader
 AS
 	BEGIN
 		BEGIN TRY
-			TRUNCATE TABLE Clinic.factlessPatientIlnesses
+			TRUNCATE TABLE Clinic.factlessPatientIllnesses
 
 
-			INSERT INTO Clinic.factlessPatientIlnesses
+			INSERT INTO Clinic.factlessPatientIllnesses
 				SELECT 	[patient_code]
 						,i.[patient_ID]
 						,[illness_ID]
@@ -3509,14 +3601,14 @@ AS
 				,[affected_rows])
 			VALUES
 				(GETDATE()
-				,'factlessPatientIlnesses'
+				,'factlessPatientIllnesses'
 				,1
 				,'inserting new VALUES was successfull'
 				,@@ROWCOUNT)
 		END TRY
 		BEGIN CATCH
 			INSERT INTO HospitalDW.dbo.Logs([DATE], [table_name], [status], [description], [affected_rows])
-			VALUES (GETDATE(), 'factlessPatientIlnesses', 0, 'Error WHILE inserting OR updating', @@ROWCOUNT);
+			VALUES (GETDATE(), 'factlessPatientIllnesses', 0, 'Error WHILE inserting OR updating', @@ROWCOUNT);
 			SELECT ERROR_MESSAGE() AS ErrorMessage
 		END CATCH
 	END
@@ -3545,7 +3637,7 @@ CREATE OR ALTER PROCEDURE Clinic.FirstLoad
 			EXEC Clinic.factTransactionAppointment_FirstLoader
 			EXEC Clinic.factDailyAppointment_FirstLoader
 			EXEC Clinic.factAccumulativeAppointment_FirstLoader
-			EXEC Clinic.factlessPatientIlnesses_FirstLoader
+			EXEC Clinic.factlessPatientIllnesses_FirstLoader
 
 			INSERT INTO Logs 
 			VALUES (GETDATE(),
@@ -3591,7 +3683,7 @@ CREATE OR ALTER PROCEDURE Clinic.[Load]
 			EXEC Clinic.factTransactionAppointment_Loader;
 			EXEC Clinic.factDailyAppointment_Loader;
 			EXEC Clinic.factAccumulativeAppointment_Loader @curr_date_fact;
-			EXEC Clinic.factlessPatientIlnesses_Loader;
+			EXEC Clinic.factlessPatientIllnesses_Loader;
 
 			INSERT INTO Logs 
 			VALUES (GETDATE(),
@@ -3720,7 +3812,7 @@ go
 ###########################################################################*/
 /*
 --FirstLoad
-exec dbo.FirstLoad;
+exec dbo.[FirstLoad];
 select * from Logs;
 */
 
