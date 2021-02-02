@@ -10,7 +10,10 @@ begin
 	begin try
 		truncate table InsuranceCompanies;
 		insert into InsuranceCompanies
-		select insuranceCompany_ID,[name],license_code,manager,agent,phone_number,fax_number,website_address,manager_phone_number,agent_phone_number,[address],additional_info,active,active_description
+		select insuranceCompany_ID,[name],license_code,manager,agent,phone_number,fax_number,website_address,manager_phone_number,agent_phone_number,[address],additional_info,active,case active 
+																																														when 0 then 'Not Active'
+																																														else 'Active'
+																																														end as active_description
 		from Hospital.dbo.InsuranceCompanies; 
 		insert into Logs values
 		(GETDATE(),'InsuranceCompanies',1,'InsuranceCompanies inserted',@@ROWCOUNT);
@@ -56,13 +59,13 @@ begin
 end
 go
 
-create or alter procedure IlnessTypes_insert as
+create or alter procedure IllnessTypes_insert as
 begin
 	begin try
-		truncate table IlnessTypes;
-		insert into IlnessTypes
-		select ilnessType_ID,[name],[description],related_department_ID
-		from Hospital.dbo.IlnessTypes; 
+		truncate table IllnessTypes;
+		insert into IllnessTypes
+		select illnessType_ID,[name],[description],related_department_ID
+		from Hospital.dbo.IllnessTypes; 
 		insert into Logs values
 		(GETDATE(),'IlnessTypes',1,'IlnessTypes inserted',@@ROWCOUNT);
 	end try
@@ -73,13 +76,16 @@ begin
 end
 go
 
-create or alter procedure Ilnesses_insert as
+create or alter procedure Illnesses_insert as
 begin
 	begin try
-		truncate table Ilnesses;
-		insert into Ilnesses
-		select illness_ID,illnessType_ID,[name],scientific_name,special_illness,killing_status,killing_description,chronic,chronic_description
-		from Hospital.dbo.Ilnesses; 
+		truncate table Illnesses;
+		insert into Illnesses
+		select illness_ID,illnessType_ID,[name],scientific_name,special_illness,killing_status,killing_description,chronic,case chronic
+																															when 0 then 'Not chronic'
+																															else 'chronic'
+																															end as chronic_description
+		from Hospital.dbo.Illnesses; 
 		insert into Logs values
 		(GETDATE(),'Ilnesses',1,'Ilnesses inserted',@@ROWCOUNT);
 	end try
@@ -112,7 +118,10 @@ begin
 	begin try
 		truncate table Doctors;
 		insert into Doctors
-		select doctor_ID,doctorContract_ID,department_ID,national_code,license_code,first_name,last_name,birthdate,gender,religion,nationality,marital_status,marital_status_description,phone_number,postal_code,[address],education_degree,specialty_description,graduation_date,university,additional_info
+		select doctor_ID,doctorContract_ID,department_ID,national_code,license_code,first_name,last_name,birthdate,gender,religion,nationality,marital_status,case marital_status
+																																								when 0 then 'single'
+																																								else 'married'
+																																								end as marital_status_description,phone_number,postal_code,[address],education_degree,specialty_description,graduation_date,university,additional_info
 		from Hospital.dbo.Doctors; 
 		insert into Logs values
 		(GETDATE(),'Doctors',1,'Doctors inserted',@@ROWCOUNT);
@@ -163,7 +172,11 @@ begin
 	begin try
 		truncate table Medicines;
 		insert into Medicines
-		select medicine_ID,medicineFactory_ID,[name],latin_name,dose,side_effects,production_date,expire_date,purchase_price,sales_price,stock,[description],medicine_type,medicine_type_description,additional_info
+		select medicine_ID,medicineFactory_ID,[name],latin_name,dose,side_effects,production_date,expire_date,purchase_price,sales_price,stock,[description],medicine_type,case medicine_type
+																																											when 0 then 'normal'
+																																											when 1 then 'beauty'
+																																											else 'special' 
+																																											end as medicine_type_description,additional_info
 		from Hospital.dbo.Medicines; 
 		insert into Logs values
 		(GETDATE(),'Medicines',1,'Medicines inserted',@@ROWCOUNT);
@@ -207,7 +220,10 @@ begin
 			begin try
 				--read this day OrderHeader
 				insert into @tmp_order
-				select medicineOrderHeader_ID, patient_ID, order_date, total_price,payment_method,payment_method_description,credit_card_number,payer,payer_phone_number,additional_info
+				select medicineOrderHeader_ID, patient_ID, order_date, total_price,payment_method,case payment_method
+																									when 0 then 'credit card'
+																									else 'cash'
+																									end as payment_method_description,credit_card_number,payer,payer_phone_number,additional_info
 				from Hospital.dbo.MedicineOrderHeaders
 				where order_date=@temp_cur_date;
 				--insert to MedicineOrderHeaders
@@ -263,7 +279,10 @@ begin
 			begin try
 				--read and insert this day appointments
 				insert into Appointments
-				select appointment_ID,patient_ID,doctor_ID,main_detected_illness,appointment_number,appointment_date,price,doctor_share,insurance_share,payment_method,payment_method_description,credit_card_number,payer,payer_phone_number,additional_info
+				select appointment_ID,patient_ID,doctor_ID,main_detected_illness,appointment_number,appointment_date,price,doctor_share,insurance_share,payment_method,case payment_method
+																																										when 0 then 'credit card'
+																																										else 'cash'
+																																										end as payment_method_description,credit_card_number,payer,payer_phone_number,additional_info
 				from Hospital.dbo.Appointments
 				where appointment_date=@temp_cur_date;
 				--log
