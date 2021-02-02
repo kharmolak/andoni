@@ -5,6 +5,9 @@ Student Numbers		: 9637453, 9629373
 Semester						: fall 1399
 version							: 3
 ***************************************************************************/
+use HospitalSA
+go
+
 create or alter procedure InsuranceCompanies_insert as
 begin
 	begin try
