@@ -135,6 +135,7 @@ contract_end_date date  ,
 appointment_portion int  ,
 salary int  ,
 active bit  ,
+active_description varchar(30),
 additional_info varchar(200) 
 );
 
