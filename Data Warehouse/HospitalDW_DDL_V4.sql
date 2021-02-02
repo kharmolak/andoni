@@ -311,7 +311,8 @@ create table Clinic.factTransactionAppointment (
     patient_ID									int,--natural key
 	insurance_ID								int, 
     insuranceCompany_ID					int,
-    doctor_ID										int,
+    doctor_code								int, -- surrogate key
+	doctor_ID										int, --natural key
 	doctorContract_ID						int,
 	department_ID								int,
 	main_detected_illness					int,
