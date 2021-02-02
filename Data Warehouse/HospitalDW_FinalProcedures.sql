@@ -2948,6 +2948,43 @@ CREATE OR ALTER PROCEDURE Clinic.factAccumulativeAppointment_FirstLoader
 	END
 GO
 
+CREATE OR ALTER PROCEDURE Clinic.factlessPatientIlnesses_FirstLoader
+AS
+	BEGIN
+		BEGIN TRY
+			TRUNCATE TABLE Clinic.factlessPatientIlnesses
+
+
+			INSERT INTO Clinic.factlessPatientIlnesses
+				SELECT 	[patient_code]
+						,[patient_ID]
+						,[illness_ID]
+						,[detection_date]
+						,[severity]
+						,[additional_info]
+				FROM HospitalSA.dbo.PatientIllnesses as i inner join dbo.dimPatients as p on(i.patient_ID=p.patient_ID and p.current_flag=1)
+		---------------------------------------------------
+			INSERT INTO [dbo].[Logs]
+				([DATE]
+				,[table_name]
+				,[status]
+				,[description]
+				,[affected_rows])
+			VALUES
+				(GETDATE()
+				,'factlessPatientIlnesses'
+				,1
+				,'inserting new VALUES was successfull'
+				,@@ROWCOUNT)
+		END TRY
+		BEGIN CATCH
+			INSERT INTO HospitalDW.dbo.Logs([DATE], [table_name], [status], [description], [affected_rows])
+			VALUES (GETDATE(), 'factlessPatientIlnesses', 0, 'Error WHILE inserting OR updating', @@ROWCOUNT);
+			SELECT ERROR_MESSAGE() AS ErrorMessage
+		END CATCH
+	END
+GO
+
 -- Facts Usual Loader Procedures
 CREATE OR ALTER PROCEDURE Clinic.factTransactionAppointment_Loader
 	AS
@@ -3448,6 +3485,43 @@ CREATE OR ALTER PROCEDURE Clinic.factAccumulativeAppointment_Loader @cur_date DA
 	END
 GO
 
+CREATE OR ALTER PROCEDURE Clinic.factlessPatientIlnesses_Loader
+AS
+	BEGIN
+		BEGIN TRY
+			TRUNCATE TABLE Clinic.factlessPatientIlnesses
+
+
+			INSERT INTO Clinic.factlessPatientIlnesses
+				SELECT 	[patient_code]
+						,[patient_ID]
+						,[illness_ID]
+						,[detection_date]
+						,[severity]
+						,[additional_info]
+				FROM HospitalSA.dbo.PatientIllnesses as i inner join dbo.dimPatients as p on(i.patient_ID=p.patient_ID and p.current_flag=1)
+		---------------------------------------------------
+			INSERT INTO [dbo].[Logs]
+				([DATE]
+				,[table_name]
+				,[status]
+				,[description]
+				,[affected_rows])
+			VALUES
+				(GETDATE()
+				,'factlessPatientIlnesses'
+				,1
+				,'inserting new VALUES was successfull'
+				,@@ROWCOUNT)
+		END TRY
+		BEGIN CATCH
+			INSERT INTO HospitalDW.dbo.Logs([DATE], [table_name], [status], [description], [affected_rows])
+			VALUES (GETDATE(), 'factlessPatientIlnesses', 0, 'Error WHILE inserting OR updating', @@ROWCOUNT);
+			SELECT ERROR_MESSAGE() AS ErrorMessage
+		END CATCH
+	END
+GO
+
 /**************************************************************************
 Clinic Main Procedures
 ***************************************************************************/
@@ -3471,6 +3545,7 @@ CREATE OR ALTER PROCEDURE Clinic.FirstLoad
 			EXEC Clinic.factTransactionAppointment_FirstLoader
 			EXEC Clinic.factDailyAppointment_FirstLoader
 			EXEC Clinic.factAccumulativeAppointment_FirstLoader
+			EXEC Clinic.factlessPatientIlnesses_FirstLoader
 
 			INSERT INTO Logs 
 			VALUES (GETDATE(),
@@ -3516,6 +3591,7 @@ CREATE OR ALTER PROCEDURE Clinic.[Load]
 			EXEC Clinic.factTransactionAppointment_Loader;
 			EXEC Clinic.factDailyAppointment_Loader;
 			EXEC Clinic.factAccumulativeAppointment_Loader @curr_date_fact;
+			EXEC Clinic.factlessPatientIlnesses_Loader;
 
 			INSERT INTO Logs 
 			VALUES (GETDATE(),
