@@ -310,6 +310,18 @@ go
 create or alter procedure  PatientIlnesses_insert as 
 begin
 	begin try
+		truncate table PatientIlnesses;
+		insert into PatientIlnesses
+		select patient_ID,ilness_ID,[detection_date],severity,additional_info
+		from Hospital.dbo.PatientIlnesses 
+		insert into Logs values
+		(GETDATE(),'PatientIlnesses',1,'PatientIlnesses inserted',@@ROWCOUNT);
+	end try
+	begin catch
+		insert into Logs values
+		(GETDATE(),'PatientIlnesses',0,'ERROR : PatientIlnesses may not inserted',@@ROWCOUNT);
+	end catch
+	/*begin try
 		declare @temp_cur_date date;
 		declare @end_date date;
 
@@ -349,7 +361,7 @@ begin
 	begin catch
 		insert into Logs values
 		(GETDATE(),'PatientIlnesses',0,'ERROR : PatientIlnesses may not inserted',@@ROWCOUNT);
-	end catch
+	end catch*/
 end
 go
 
