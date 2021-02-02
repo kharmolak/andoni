@@ -43,25 +43,6 @@
 --)
 --go
 
---create table Clinic.factMonthlyAppointment (
---	insuranceCompany_ID		int,
--- doctor_ID							int,
---	doctorContract_ID			int,
---	department_ID					int,
--- TimeKey							int,
---	-------------------------------
---	total_paied_price				int,
---	total_real_price				int,
---	total_insurance_credit		int,
---	total_doctor_share			int,
---	total_income					int,
---	number_of_patient			int,
---	max_visit_per_day			int,
---	min_visit_per_day			int,
---	avg_visit_per_day				int,
---)
---go
-
 --create table Clinic.factAccumulativeAppointment (
 -- insuranceCompany_ID		int,
 -- doctor_ID							int,
@@ -73,10 +54,7 @@
 --	total_insurance_credit		int,
 --	total_doctor_share			int,
 --	total_income					int,
---	number_of_patient			int,
---	max_visit_per_month		int,
---	min_visit_per_month		int,
---	avg_visit_per_month		int,
+--	number_of_patient			int
 --)
 --go
 

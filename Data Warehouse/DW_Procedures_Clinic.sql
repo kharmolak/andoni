@@ -115,61 +115,61 @@ CREATE OR ALTER PROCEDURE Clinic.dimDoctors_FirstLoader @curr_date DATE
 			TRUNCATE TABLE Clinic.dimDoctors
 
 			INSERT INTO [Clinic].[dimDoctors]
-           ([doctor_ID]
-           ,[doctorContract_ID]
-           ,[national_code]
-           ,[license_code]
-           ,[first_name]
-           ,[last_name]
-           ,[birthdate]
-           ,[phone_number]
-           ,[department_ID]
-           ,[department_name]
-           ,[education_degree]
-           ,[specialty_description]
-           ,[graduation_date]
-           ,[university]
-           ,[gender]
-           ,[religion]
-           ,[nationality]
-           ,[marital_status]
-           ,[marital_status_description]
-           ,[postal_code]
-           ,[address]
-           ,[additional_info]
-           ,[start_date]
-           ,[end_date]
-           ,[current_flag]
-           ,[Contract_Degree]
-           ,[Contract_Degree_description])
-     VALUES
-           (-1
-           ,-1
-           ,'Unknown'
-           ,'Unknown'
-           ,'Unknown'
-           ,'Unknown'
-           ,NULL
-           ,'Unknown'
-           ,-1
-           ,'Unknown'
-           ,NULL
-           ,'Unknown'
-           ,NULL
-           ,'Unknown'
-           ,'Unknown'
-           ,'Unknown'
-           ,'Unknown'
-           ,NULL
-           ,'Unknown'
-           ,'Unknown'
-           ,'Unknown'
-           ,'Unknown'
-           ,NULL
-           ,NULL
-           ,1
-           ,-1
-           ,'Unknown')
+					([doctor_ID]
+					,[doctorContract_ID]
+					,[national_code]
+					,[license_code]
+					,[first_name]
+					,[last_name]
+					,[birthdate]
+					,[phone_number]
+					,[department_ID]
+					,[department_name]
+					,[education_degree]
+					,[specialty_description]
+					,[graduation_date]
+					,[university]
+					,[gender]
+					,[religion]
+					,[nationality]
+					,[marital_status]
+					,[marital_status_description]
+					,[postal_code]
+					,[address]
+					,[additional_info]
+					,[start_date]
+					,[end_date]
+					,[current_flag]
+					,[Contract_Degree]
+					,[Contract_Degree_description])
+				VALUES
+					(-1
+					,-1
+					,'Unknown'
+					,'Unknown'
+					,'Unknown'
+					,'Unknown'
+					,NULL
+					,'Unknown'
+					,-1
+					,'Unknown'
+					,NULL
+					,'Unknown'
+					,NULL
+					,'Unknown'
+					,'Unknown'
+					,'Unknown'
+					,'Unknown'
+					,NULL
+					,'Unknown'
+					,'Unknown'
+					,'Unknown'
+					,'Unknown'
+					,NULL
+					,NULL
+					,1
+					,-1
+					,'Unknown')
 
 			INSERT INTO Clinic.dimDoctors(
 						 [doctor_ID],[doctorContract_ID],[national_code]
@@ -796,7 +796,7 @@ GO
 ---------------------------------------------
 -- Clinic Mart : Facts
 ---------------------------------------------
--- Transactional Fact 
+-- Facts First Loader Procedures
 CREATE OR ALTER PROCEDURE Clinic.factTransactionAppointment_FirstLoader
 	AS
 	BEGIN
@@ -1005,6 +1005,299 @@ CREATE OR ALTER PROCEDURE Clinic.factTransactionAppointment_FirstLoader
 	END
 GO
 
+CREATE OR ALTER PROCEDURE Clinic.factDailyAppointment_FirstLoader 
+	AS
+	BEGIN
+		BEGIN TRY
+			DECLARE @curr_date DATE;
+			DECLARE @curr_date_key INT;
+			DECLARE @end_date DATE;
+
+			SET @curr_date = (
+				SELECT MIN(appointment_date)
+				FROM HospitalSA.dbo.Appointments
+			);
+
+			SET @end_date = (
+				SELECT MAX(appointment_date)
+				FROM HospitalSA.dbo.Appointments
+			);
+			
+			SELECT  ic.[insuranceCompany_ID]
+					,d.[doctor_code]
+					,d.[doctor_ID]
+					,d.[doctorContract_ID]
+					,d.[department_ID]
+					,ill.[illness_ID] AS main_detected_illness
+					,ill.[illnessType_ID]
+			INTO #tmp_dim_cartesian
+			FROM dbo.dimInsuranceCompanies ic
+				 ,Clinic.dimDoctors d
+				 ,Clinic.dimIllnesses ill
+			WHERE d.current_flag = 1
+
+			--loop in days
+			WHILE @curr_date < @end_date BEGIN
+				BEGIN TRY
+					--find TimeKey
+					SET @curr_date_key = (
+						SELECT TimeKey
+						FROM dbo.dimDate
+						WHERE FullDateAlternateKey = @curr_date
+					);
+					
+					SELECT 	 [insuranceCompany_ID]
+							,[doctor_code]
+							,[doctor_ID]
+							,[doctorContract_ID]
+							,[department_ID]
+							,[main_detected_illness]
+							,[illnessType_ID]
+							,[TimeKey]
+							,SUM([paid_price]) AS total_paied_price
+							,SUM([real_price]) AS total_real_price
+							,SUM([insurance_share]) AS total_insurance_credit
+							,SUM([doctor_share]) AS total_doctor_share
+							,SUM([income]) AS total_income
+							,SUM([patient_code]) AS number_of_patient
+					INTO #tmp_groupby
+					FROM HospitalDW.Clinic.factTransactionAppointment
+					WHERE TimeKey = @curr_date_key
+					GROUP BY [insuranceCompany_ID]
+							,[doctor_code]
+							,[doctor_ID]
+							,[doctorContract_ID]
+							,[department_ID]
+							,[main_detected_illness]
+							,[illnessType_ID]
+							,[TimeKey]
+					
+					INSERT INTO Clinic.factDailyAppointment
+						SELECT   [insuranceCompany_ID]
+								,[doctor_code]
+								,[doctor_ID]
+								,[doctorContract_ID]
+								,[department_ID]
+								,[main_detected_illness]
+								,[illnessType_ID]
+								,@curr_date_key
+								,ISNULL(total_paied_price,0)
+								,ISNULL(total_real_price,0)
+								,ISNULL(total_insurance_credit,0)
+								,ISNULL(total_doctor_share,0)
+								,ISNULL(total_income,0)
+								,ISNULL(number_of_patient,0)
+						FROM #tmp_groupby tg
+							RIGHT JOIN #tmp_dim_cartesian td
+							ON (tg.insuranceCompany_ID = td.insuranceCompany_ID
+								AND tg.doctor_code = td.doctor_code
+								AND tg.doctor_ID = td.doctor_ID
+								AND tg.doctorContract_ID = td.doctorContract_ID
+								AND tg.department_ID = td.department_ID
+								AND tg.main_detected_illness = td.main_detected_illness
+								AND tg.illnessType_ID = td.illnessType_ID)
+
+					--------------------------------------------
+					INSERT INTO Logs
+					VALUES (GETDATE(),
+							'Clinic.factDailyAppointment',
+							1,
+							'Transactions of '+CONVERT(VARCHAR,@curr_date)+' inserted',
+							@@ROWCOUNT);
+					
+					--add a day 
+					SET @curr_date = DATEADD(DAY, 1, @curr_date);
+
+					--drop temporary tables
+					DROP TABLE #tmp_groupby
+
+				END TRY
+				BEGIN CATCH
+					INSERT INTO Logs 
+					VALUES (GETDATE(),
+							'Clinic.factDailyAppointment',
+							0,
+							'ERROR : Transactions of '+CONVERT(VARCHAR,@curr_date)+' may not inserted',
+							@@ROWCOUNT);
+				END CATCH
+			END
+
+			--drop temporary tables
+			DROP TABLE #tmp_dim_cartesian
+
+			INSERT INTO Logs 
+			VALUES (GETDATE(),
+					'Clinic.factDailyAppointment',
+					1,
+					'New Transactions inserted',
+					@@ROWCOUNT);
+		END TRY
+		BEGIN CATCH
+			--drop temporary tables
+			DROP TABLE IF EXISTS #tmp_groupby
+			DROP TABLE IF EXISTS #tmp_dim_cartesian
+
+			INSERT INTO Logs 
+			VALUES (GETDATE(),
+					'Clinic.factDailyAppointment',
+					0,
+					'ERROR : New Transactions may not inserted',
+					@@ROWCOUNT);
+		END CATCH
+	END
+GO
+
+CREATE OR ALTER PROCEDURE Clinic.factAccumulativeAppointment_FirstLoader
+	AS
+	BEGIN
+		BEGIN TRY
+			DECLARE @curr_date DATE;
+			DECLARE @curr_date_key INT;
+			DECLARE @end_date DATE;
+
+			SET @curr_date = (
+				SELECT MIN(appointment_date)
+				FROM HospitalSA.dbo.Appointments
+			);
+
+			SET @end_date = (
+				SELECT MAX(appointment_date)
+				FROM HospitalSA.dbo.Appointments
+			);
+			
+			SELECT   i.[insuranceCompany_ID]
+					,d.[doctor_code]
+					,d.[doctor_ID]
+					,d.[doctorContract_ID]
+					,d.[department_ID]
+					,0 AS total_paied_price
+					,0 AS total_real_price
+					,0 AS total_insurance_credit
+					,0 AS total_doctor_share
+					,0 AS total_income
+					,0 AS number_of_patient
+			INTO #tmp_dim_cartesian
+			FROM dbo.dimInsuranceCompanies i
+				 ,Clinic.dimDoctors d
+			WHERE d.current_flag = 1
+
+			--loop in days
+			WHILE @curr_date < @end_date BEGIN
+				BEGIN TRY
+					--find TimeKey
+					SET @curr_date_key = (
+						SELECT TimeKey
+						FROM dbo.dimDate
+						WHERE FullDateAlternateKey = @curr_date
+					);
+
+					SELECT 	 [insuranceCompany_ID]
+							,[doctor_code]
+							,[doctor_ID]
+							,[doctorContract_ID]
+							,[department_ID]
+							,SUM([total_paied_price]) AS total_paied_price
+							,SUM([total_real_price]) AS total_real_price
+							,SUM([total_insurance_share]) AS total_insurance_credit
+							,SUM([total_doctor_share]) AS total_doctor_share
+							,SUM([total_income]) AS total_income
+							,SUM([number_of_patient]) AS number_of_patient
+					INTO #tmp_current_date_daily
+					FROM Clinic.factDailyAppointment
+					WHERE TimeKey = @curr_date_key
+					GROUP BY [insuranceCompany_ID]
+							,[doctor_code]
+							,[doctor_ID]
+							,[doctorContract_ID]
+							,[department_ID]
+					
+					SELECT 	 a.[insuranceCompany_ID]
+							,a.[doctor_code]
+							,a.[doctor_ID]
+							,a.[doctorContract_ID]
+							,a.[department_ID]
+							,a.total_paied_price + d.total_paied_price AS total_paied_price
+							,a.total_real_price + d.total_real_price AS total_real_price
+							,a.total_insurance_credit + d.total_insurance_credit AS total_insurance_credit
+							,a.total_doctor_share + d.total_doctor_share AS total_doctor_share
+							,a.total_income + d.total_income AS total_income
+							,a.number_of_patient + d.number_of_patient AS number_of_patient
+					INTO #tmp_acc_current_date
+					FROM #tmp_dim_cartesian a
+						INNER JOIN tmp_current_date_daily d
+						ON (a.[insuranceCompany_ID] = d.[insuranceCompany_ID]
+						   AND a.[doctor_code] = d.[doctor_code]
+						   AND a.[doctor_ID] = d.[doctor_ID]
+						   AND a.[doctorContract_ID] = d.[doctorContract_ID]
+						   AND a.[department_ID] = d.[department_ID])
+					
+					TRUNCATE TABLE #tmp_dim_cartesian
+
+					INSERT INTO #tmp_dim_cartesian
+						SELECT 	[insuranceCompany_ID]
+								,[doctor_code]
+								,[doctor_ID]
+								,[doctorContract_ID]
+								,[department_ID]
+								,total_paied_price
+								,total_real_price
+								,total_insurance_credit
+								,total_doctor_share
+								,total_income
+								,number_of_patient
+						FROM #tmp_acc_current_date
+					--------------------------------------------
+					INSERT INTO Logs
+					VALUES (GETDATE(),
+							'Clinic.factTransactionAppointment',
+							1,
+							'Transactions of '+CONVERT(VARCHAR,@curr_date)+' inserted',
+							@@ROWCOUNT);
+					
+					--add a day 
+					SET @curr_date = DATEADD(DAY, 1, @curr_date);
+
+					--drop temporary tables
+					DROP TABLE #tmp_acc_current_date
+					DROP TABLE #tmp_current_date_daily
+
+				END TRY
+				BEGIN CATCH
+					--drop temporary tables
+					DROP TABLE IF EXISTS #tmp_acc_current_date
+					DROP TABLE IF EXISTS #tmp_current_date_daily
+					DROP TABLE IF EXISTS #tmp_dim_cartesian
+
+					INSERT INTO Logs 
+					VALUES (GETDATE(),
+							'Clinic.factTransactionAppointment',
+							0,
+							'ERROR : Transactions of '+CONVERT(VARCHAR,@curr_date)+' may not inserted',
+							@@ROWCOUNT);
+				END CATCH
+			END 
+			INSERT INTO Logs 
+			VALUES (GETDATE(),
+					'Clinic.factTransactionAppointment',
+					1,
+					'New Transactions inserted',
+					@@ROWCOUNT);
+		END TRY
+		BEGIN CATCH
+			--drop temporary tables
+			DROP TABLE IF EXISTS #tmp_dim_cartesian
+			
+			INSERT INTO Logs 
+			VALUES (GETDATE(),
+					'Clinic.factTransactionAppointment',
+					0,
+					'ERROR : New Transactions may not inserted',
+					@@ROWCOUNT);
+		END CATCH
+	END
+GO
+
+-- Facts Usual Loader Procedures
 CREATE OR ALTER PROCEDURE Clinic.factTransactionAppointment_Loader
 	AS
 	BEGIN
@@ -1214,148 +1507,6 @@ CREATE OR ALTER PROCEDURE Clinic.factTransactionAppointment_Loader
 	END
 GO
 
--- Periodic Snapshot Fact : Daily
-CREATE OR ALTER PROCEDURE Clinic.factDailyAppointment_FirstLoader 
-	AS
-	BEGIN
-		BEGIN TRY
-			DECLARE @curr_date DATE;
-			DECLARE @curr_date_key INT;
-			DECLARE @end_date DATE;
-
-			SET @curr_date = (
-				SELECT MIN(appointment_date)
-				FROM HospitalSA.dbo.Appointments
-			);
-
-			SET @end_date = (
-				SELECT MAX(appointment_date)
-				FROM HospitalSA.dbo.Appointments
-			);
-			
-			SELECT  ic.[insuranceCompany_ID]
-					,d.[doctor_code]
-					,d.[doctor_ID]
-					,d.[doctorContract_ID]
-					,d.[department_ID]
-					,ill.[main_detected_illness]
-					,ill.[illnessType_ID]
-			INTO #tmp_dim_cartesian
-			FROM dbo.dimInsuranceCompanies ic
-				 ,Clinic.dimDoctors d
-				 ,Clinic.dimIllnesses ill
-
-			--loop in days
-			WHILE @curr_date < @end_date BEGIN
-				BEGIN TRY
-					--find TimeKey
-					SET @curr_date_key = (
-						SELECT TimeKey
-						FROM dbo.dimDate
-						WHERE FullDateAlternateKey = @curr_date
-					);
-					
-					SELECT 	 [insuranceCompany_ID]
-							,[doctor_code]
-							,[doctor_ID]
-							,[doctorContract_ID]
-							,[department_ID]
-							,[main_detected_illness]
-							,[illnessType_ID]
-							,[TimeKey]
-							,SUM([paid_price]) AS total_paied_price
-							,SUM([real_price]) AS total_real_price
-							,SUM([insurance_share]) AS total_insurance_credit
-							,SUM([doctor_share]) AS total_doctor_share
-							,SUM([income]) AS total_income
-							,SUM([patient_code]) AS number_of_patient
-					INTO #tmp_groupby
-					FROM HospitalDW.Clinic.factTransactionAppointment
-					WHERE TimeKey = @curr_date_key
-					GROUP BY [insuranceCompany_ID]
-							,[doctor_code]
-							,[doctor_ID]
-							,[doctorContract_ID]
-							,[department_ID]
-							,[main_detected_illness]
-							,[illnessType_ID]
-							,[TimeKey]
-					
-					INSERT INTO Clinic.factDailyAppointment
-						SELECT   [insuranceCompany_ID]
-								,[doctor_code]
-								,[doctor_ID]
-								,[doctorContract_ID]
-								,[department_ID]
-								,[main_detected_illness]
-								,[illnessType_ID]
-								,@curr_date_key
-								,ISNULL(total_paied_price,0)
-								,ISNULL(total_real_price,0)
-								,ISNULL(total_insurance_credit,0)
-								,ISNULL(total_doctor_share,0)
-								,ISNULL(total_income,0)
-								,ISNULL(number_of_patient,0)
-						FROM #tmp_groupby tg
-							RIGHT JOIN #tmp_dim_cartesian td
-							ON (tg.insuranceCompany_ID = td.insuranceCompany_ID
-								AND tg.doctor_code = td.doctor_code
-								AND tg.doctor_ID = td.doctor_ID
-								AND tg.doctorContract_ID = td.doctorContract_ID
-								AND tg.department_ID = td.department_ID
-								AND tg.main_detected_illness = td.main_detected_illness
-								AND tg.illnessType_ID = td.illnessType_ID)
-
-					--------------------------------------------
-					INSERT INTO Logs
-					VALUES (GETDATE(),
-							'Clinic.factDailyAppointment',
-							1,
-							'Transactions of '+CONVERT(VARCHAR,@curr_date)+' inserted',
-							@@ROWCOUNT);
-					
-					--add a day 
-					SET @curr_date = DATEADD(DAY, 1, @curr_date);
-
-					--drop temporary tables
-					DROP TABLE #tmp_groupby
-
-				END TRY
-				BEGIN CATCH
-					INSERT INTO Logs 
-					VALUES (GETDATE(),
-							'Clinic.factDailyAppointment',
-							0,
-							'ERROR : Transactions of '+CONVERT(VARCHAR,@curr_date)+' may not inserted',
-							@@ROWCOUNT);
-				END CATCH
-			END
-
-			--drop temporary tables
-			DROP TABLE #tmp_dim_cartesian
-
-			INSERT INTO Logs 
-			VALUES (GETDATE(),
-					'Clinic.factDailyAppointment',
-					1,
-					'New Transactions inserted',
-					@@ROWCOUNT);
-		END TRY
-		BEGIN CATCH
-			--drop temporary tables
-			DROP TABLE IF EXISTS #tmp_groupby
-			DROP TABLE IF EXISTS #tmp_dim_cartesian
-
-			INSERT INTO Logs 
-			VALUES (GETDATE(),
-					'Clinic.factDailyAppointment',
-					0,
-					'ERROR : New Transactions may not inserted',
-					@@ROWCOUNT);
-		END CATCH
-	END
-GO
-
 CREATE OR ALTER PROCEDURE Clinic.factDailyAppointment_Loader 
 	AS
 	BEGIN
@@ -1380,12 +1531,13 @@ CREATE OR ALTER PROCEDURE Clinic.factDailyAppointment_Loader
 					,d.[doctor_ID]
 					,d.[doctorContract_ID]
 					,d.[department_ID]
-					,ill.[main_detected_illness]
+					,ill.[illness_ID] AS main_detected_illness
 					,ill.[illnessType_ID]
 			INTO #tmp_dim_cartesian
 			FROM dbo.dimInsuranceCompanies ic
 				 ,Clinic.dimDoctors d
 				 ,Clinic.dimIllnesses ill
+			WHERE d.current_flag = 1
 
 			--loop in days
 			WHILE @curr_date < @end_date BEGIN
@@ -1498,274 +1650,244 @@ CREATE OR ALTER PROCEDURE Clinic.factDailyAppointment_Loader
 	END
 GO
 
--- Periodic Snapshot Fact : Monthly
-CREATE OR ALTER PROCEDURE Clinic.factMonthlyAppointment_FirstLoader 
+CREATE OR ALTER PROCEDURE Clinic.factAccumulativeAppointment_Loader @cur_date DATE
 	AS
 	BEGIN
 		BEGIN TRY
 			DECLARE @curr_date DATE;
 			DECLARE @curr_date_key INT;
 			DECLARE @end_date DATE;
+
+			SET @curr_date = DATEADD(DAY,1,@cur_date)
+
+			SET @end_date = (
+				SELECT MAX(appointment_date)
+				FROM HospitalSA.dbo.Appointments
+			);
+			
+			SELECT   i.[insuranceCompany_ID]
+					,d.[doctor_code]
+					,d.[doctor_ID]
+					,d.[doctorContract_ID]
+					,d.[department_ID]
+					,0 AS total_paied_price
+					,0 AS total_real_price
+					,0 AS total_insurance_credit
+					,0 AS total_doctor_share
+					,0 AS total_income
+					,0 AS number_of_patient
+			INTO #tmp_dim_cartesian
+			FROM dbo.dimInsuranceCompanies i
+				 ,Clinic.dimDoctors d
+			WHERE d.current_flag = 1
+
+			--loop in days
+			WHILE @curr_date < @end_date BEGIN
+				BEGIN TRY
+					--find TimeKey
+					SET @curr_date_key = (
+						SELECT TimeKey
+						FROM dbo.dimDate
+						WHERE FullDateAlternateKey = @curr_date
+					);
+
+					SELECT 	 [insuranceCompany_ID]
+							,[doctor_code]
+							,[doctor_ID]
+							,[doctorContract_ID]
+							,[department_ID]
+							,SUM([total_paied_price]) AS total_paied_price
+							,SUM([total_real_price]) AS total_real_price
+							,SUM([total_insurance_share]) AS total_insurance_credit
+							,SUM([total_doctor_share]) AS total_doctor_share
+							,SUM([total_income]) AS total_income
+							,SUM([number_of_patient]) AS number_of_patient
+					INTO #tmp_current_date_daily
+					FROM Clinic.factDailyAppointment
+					WHERE TimeKey = @curr_date_key
+					GROUP BY [insuranceCompany_ID]
+							,[doctor_code]
+							,[doctor_ID]
+							,[doctorContract_ID]
+							,[department_ID]
+					
+					SELECT 	 a.[insuranceCompany_ID]
+							,a.[doctor_code]
+							,a.[doctor_ID]
+							,a.[doctorContract_ID]
+							,a.[department_ID]
+							,a.total_paied_price + d.total_paied_price AS total_paied_price
+							,a.total_real_price + d.total_real_price AS total_real_price
+							,a.total_insurance_credit + d.total_insurance_credit AS total_insurance_credit
+							,a.total_doctor_share + d.total_doctor_share AS total_doctor_share
+							,a.total_income + d.total_income AS total_income
+							,a.number_of_patient + d.number_of_patient AS number_of_patient
+					INTO #tmp_acc_current_date
+					FROM #tmp_dim_cartesian a
+						INNER JOIN tmp_current_date_daily d
+						ON (a.[insuranceCompany_ID] = d.[insuranceCompany_ID]
+						   AND a.[doctor_code] = d.[doctor_code]
+						   AND a.[doctor_ID] = d.[doctor_ID]
+						   AND a.[doctorContract_ID] = d.[doctorContract_ID]
+						   AND a.[department_ID] = d.[department_ID])
+					
+					TRUNCATE TABLE #tmp_dim_cartesian;
+
+					INSERT INTO #tmp_dim_cartesian
+						SELECT 	[insuranceCompany_ID]
+								,[doctor_code]
+								,[doctor_ID]
+								,[doctorContract_ID]
+								,[department_ID]
+								,total_paied_price
+								,total_real_price
+								,total_insurance_credit
+								,total_doctor_share
+								,total_income
+								,number_of_patient
+						FROM #tmp_acc_current_date
+					--------------------------------------------
+					INSERT INTO Logs
+					VALUES (GETDATE(),
+							'Clinic.factTransactionAppointment',
+							1,
+							'Transactions of '+CONVERT(VARCHAR,@curr_date)+' inserted',
+							@@ROWCOUNT);
+					
+					--add a day 
+					SET @curr_date = DATEADD(DAY, 1, @curr_date);
+
+					--drop temporary tables
+					DROP TABLE #tmp_acc_current_date
+					DROP TABLE #tmp_current_date_daily
+
+				END TRY
+				BEGIN CATCH
+					--drop temporary tables
+					DROP TABLE IF EXISTS #tmp_acc_current_date
+					DROP TABLE IF EXISTS #tmp_current_date_daily
+					DROP TABLE IF EXISTS #tmp_dim_cartesian
+
+					INSERT INTO Logs 
+					VALUES (GETDATE(),
+							'Clinic.factTransactionAppointment',
+							0,
+							'ERROR : Transactions of '+CONVERT(VARCHAR,@curr_date)+' may not inserted',
+							@@ROWCOUNT);
+				END CATCH
+			END 
+			INSERT INTO Logs 
+			VALUES (GETDATE(),
+					'Clinic.factTransactionAppointment',
+					1,
+					'New Transactions inserted',
+					@@ROWCOUNT);
+		END TRY
+		BEGIN CATCH
+			--drop temporary tables
+			DROP TABLE IF EXISTS #tmp_dim_cartesian
+			
+			INSERT INTO Logs 
+			VALUES (GETDATE(),
+					'Clinic.factTransactionAppointment',
+					0,
+					'ERROR : New Transactions may not inserted',
+					@@ROWCOUNT);
+		END CATCH
+	END
+GO
+
+---------------------------------------------
+-- Clinic Mart : General Procedures 
+---------------------------------------------
+CREATE OR ALTER PROCEDURE Clinic.FirstLoader
+	AS
+	BEGIN
+		BEGIN TRY
+			DECLARE @curr_date DATE;
+
+			SET @curr_date = (
+				SELECT MIN(appointment_date)
+				FROM HospitalSA.dbo.Appointments
+			);
+			
+			EXEC Clinic.dimDepartments_FirstLoader;
+			EXEC Clinic.dimDoctorContracts_FirstLoader;
+			EXEC Clinic.dimDoctors_FirstLoader @curr_date;
+			EXEC Clinic.dimIllnessTypes_FirstLoader;
+			EXEC Clinic.dimIllnesses_FirstLoader;
+
+			EXEC Clinic.factTransactionAppointment_FirstLoader
+			EXEC Clinic.factDailyAppointment_FirstLoader
+			EXEC Clinic.factAccumulativeAppointment_FirstLoader
+
+			INSERT INTO Logs 
+			VALUES (GETDATE(),
+					'Clinic Mart',
+					1,
+					'All First Load insertions was successful',
+					@@ROWCOUNT);
+		END TRY
+		BEGIN CATCH
+			INSERT INTO Logs 
+			VALUES (GETDATE(),
+					'Clinic Mart',
+					0,
+					'ERROR : First Load insertions FAILED',
+					@@ROWCOUNT);
+		END CATCH
+	END
+GO
+
+CREATE OR ALTER PROCEDURE Clinic.Loader
+	AS
+	BEGIN
+		BEGIN TRY
+			DECLARE @curr_date DATE;
+			DECLARE @curr_date_fact DATE;
 
 			SET @curr_date = (
 				SELECT MIN(appointment_date)
 				FROM HospitalSA.dbo.Appointments
 			);
 
-			SET @end_date = (
-				SELECT MAX(appointment_date)
-				FROM HospitalSA.dbo.Appointments
-			);
-			
-			--loop in days
-			WHILE @curr_date < @end_date BEGIN
-				BEGIN TRY
-					--find TimeKey
-					SET @curr_date_key = (
-						SELECT TimeKey
-						FROM dbo.dimDate
-						WHERE FullDateAlternateKey = @curr_date
-					);
-					
-					SELECT 	 [insuranceCompany_ID]
-							,[doctor_code]
-							,[doctor_ID]
-							,[doctorContract_ID]
-							,[department_ID]
-							,[main_detected_illness]
-							,[illnessType_ID]
-							,[TimeKey]
-							,SUM([paid_price]) AS total_paied_price
-							,SUM([real_price]) AS total_real_price
-							,SUM([insurance_share]) AS total_insurance_credit
-							,SUM([doctor_share]) AS total_doctor_share
-							,SUM([income]) AS total_income
-							,SUM([patient_code]) AS number_of_patient
-					INTO #tmp_groupby
-					FROM HospitalDW.Clinic.factTransactionAppointment
-					WHERE TimeKey = @curr_date_key
-					GROUP BY [insuranceCompany_ID]
-							,[doctor_code]
-							,[doctor_ID]
-							,[doctorContract_ID]
-							,[department_ID]
-							,[main_detected_illness]
-							,[illnessType_ID]
-							,[TimeKey]
-					
-					INSERT INTO Clinic.factDailyAppointment
-						SELECT   [insuranceCompany_ID]
-								,[doctor_code]
-								,[doctor_ID]
-								,[doctorContract_ID]
-								,[department_ID]
-								,[main_detected_illness]
-								,[illnessType_ID]
-								,@curr_date_key
-								,ISNULL(total_paied_price,0)
-								,ISNULL(total_real_price,0)
-								,ISNULL(total_insurance_credit,0)
-								,ISNULL(total_doctor_share,0)
-								,ISNULL(total_income,0)
-								,ISNULL(number_of_patient,0)
-						FROM #tmp_groupby tg
-							RIGHT JOIN #tmp_dim_cartesian td
-							ON (tg.insuranceCompany_ID = td.insuranceCompany_ID
-								AND tg.doctor_code = td.doctor_code
-								AND tg.doctor_ID = td.doctor_ID
-								AND tg.doctorContract_ID = td.doctorContract_ID
-								AND tg.department_ID = td.department_ID
-								AND tg.main_detected_illness = td.main_detected_illness
-								AND tg.illnessType_ID = td.illnessType_ID)
-
-					--------------------------------------------
-					INSERT INTO Logs
-					VALUES (GETDATE(),
-							'Clinic.factDailyAppointment',
-							1,
-							'Transactions of '+CONVERT(VARCHAR,@curr_date)+' inserted',
-							@@ROWCOUNT);
-					
-					--add a day 
-					SET @curr_date = DATEADD(DAY, 1, @curr_date);
-
-					--drop temporary tables
-					DROP TABLE #tmp_groupby
-
-				END TRY
-				BEGIN CATCH
-					INSERT INTO Logs 
-					VALUES (GETDATE(),
-							'Clinic.factDailyAppointment',
-							0,
-							'ERROR : Transactions of '+CONVERT(VARCHAR,@curr_date)+' may not inserted',
-							@@ROWCOUNT);
-				END CATCH
-			END
-
-			--drop temporary tables
-			DROP TABLE #tmp_dim_cartesian
-
-			INSERT INTO Logs 
-			VALUES (GETDATE(),
-					'Clinic.factDailyAppointment',
-					1,
-					'New Transactions inserted',
-					@@ROWCOUNT);
-		END TRY
-		BEGIN CATCH
-			--drop temporary tables
-			DROP TABLE IF EXISTS #tmp_groupby
-			DROP TABLE IF EXISTS #tmp_dim_cartesian
-
-			INSERT INTO Logs 
-			VALUES (GETDATE(),
-					'Clinic.factDailyAppointment',
-					0,
-					'ERROR : New Transactions may not inserted',
-					@@ROWCOUNT);
-		END CATCH
-	END
-GO
-
-CREATE OR ALTER PROCEDURE Clinic.factMonthlyAppointment_Loader 
-	AS
-	BEGIN
-		BEGIN TRY
-			DECLARE @curr_date DATE;
-			DECLARE @curr_date_key INT;
-			DECLARE @end_date DATE;
-
-			SET @curr_date = (
+			SET @curr_date_fact = (
 				SELECT CONVERT(DATE,CONVERT(VARCHAR,MAX(TimeKey)))
 				FROM HospitalDW.Clinic.factTransactionAppointment 
 			);
-			SET @curr_date = DATEADD(DAY,1,@curr_date);
-
-			SET @end_date = (
-				SELECT MAX(appointment_date)
-				FROM HospitalSA.dbo.Appointments
-			);
 			
-			SELECT  ic.[insuranceCompany_ID]
-					,d.[doctor_code]
-					,d.[doctor_ID]
-					,d.[doctorContract_ID]
-					,d.[department_ID]
-					,ill.[main_detected_illness]
-					,ill.[illnessType_ID]
-			INTO #tmp_dim_cartesian
-			FROM dbo.dimInsuranceCompanies ic
-				 ,Clinic.dimDoctors d
-				 ,Clinic.dimIllnesses ill
+			EXEC Clinic.dimDepartments_Loader @curr_date;
+			EXEC Clinic.dimDoctorContracts_Loader;
+			EXEC Clinic.dimDoctors_Loader @curr_date;
+			EXEC Clinic.dimIllnessTypes_Loader;
+			EXEC Clinic.dimIllnesses_Loader;
 
-			--loop in days
-			WHILE @curr_date < @end_date BEGIN
-				BEGIN TRY
-					--find TimeKey
-					SET @curr_date_key = (
-						SELECT TimeKey
-						FROM dbo.dimDate
-						WHERE FullDateAlternateKey = @curr_date
-					);
-					
-					SELECT 	 [insuranceCompany_ID]
-							,[doctor_code]
-							,[doctor_ID]
-							,[doctorContract_ID]
-							,[department_ID]
-							,[main_detected_illness]
-							,[illnessType_ID]
-							,[TimeKey]
-							,SUM([paid_price]) AS total_paied_price
-							,SUM([real_price]) AS total_real_price
-							,SUM([insurance_share]) AS total_insurance_credit
-							,SUM([doctor_share]) AS total_doctor_share
-							,SUM([income]) AS total_income
-							,SUM([patient_code]) AS number_of_patient
-					INTO #tmp_groupby
-					FROM HospitalDW.Clinic.factTransactionAppointment
-					WHERE TimeKey = @curr_date_key
-					GROUP BY [insuranceCompany_ID]
-							,[doctor_code]
-							,[doctor_ID]
-							,[doctorContract_ID]
-							,[department_ID]
-							,[main_detected_illness]
-							,[illnessType_ID]
-							,[TimeKey]
-					
-					INSERT INTO Clinic.factDailyAppointment
-						SELECT   [insuranceCompany_ID]
-								,[doctor_code]
-								,[doctor_ID]
-								,[doctorContract_ID]
-								,[department_ID]
-								,[main_detected_illness]
-								,[illnessType_ID]
-								,@curr_date_key
-								,ISNULL(total_paied_price,0)
-								,ISNULL(total_real_price,0)
-								,ISNULL(total_insurance_credit,0)
-								,ISNULL(total_doctor_share,0)
-								,ISNULL(total_income,0)
-								,ISNULL(number_of_patient,0)
-						FROM #tmp_groupby tg
-							RIGHT JOIN #tmp_dim_cartesian td
-							ON (tg.insuranceCompany_ID = td.insuranceCompany_ID
-								AND tg.doctor_code = td.doctor_code
-								AND tg.doctor_ID = td.doctor_ID
-								AND tg.doctorContract_ID = td.doctorContract_ID
-								AND tg.department_ID = td.department_ID
-								AND tg.main_detected_illness = td.main_detected_illness
-								AND tg.illnessType_ID = td.illnessType_ID)
-
-					--------------------------------------------
-					INSERT INTO Logs
-					VALUES (GETDATE(),
-							'Clinic.factDailyAppointment',
-							1,
-							'Transactions of '+CONVERT(VARCHAR,@curr_date)+' inserted',
-							@@ROWCOUNT);
-					
-					--add a day 
-					SET @curr_date = DATEADD(DAY, 1, @curr_date);
-
-					--drop temporary tables
-					DROP TABLE #tmp_groupby
-
-				END TRY
-				BEGIN CATCH
-					INSERT INTO Logs 
-					VALUES (GETDATE(),
-							'Clinic.factDailyAppointment',
-							0,
-							'ERROR : Transactions of '+CONVERT(VARCHAR,@curr_date)+' may not inserted',
-							@@ROWCOUNT);
-				END CATCH
-			END
-
-			--drop temporary tables
-			DROP TABLE #tmp_dim_cartesian
+			EXEC Clinic.factTransactionAppointment_Loader;
+			EXEC Clinic.factDailyAppointment_Loader;
+			EXEC Clinic.factAccumulativeAppointment_Loader @curr_date_fact;
 
 			INSERT INTO Logs 
 			VALUES (GETDATE(),
-					'Clinic.factDailyAppointment',
+					'Clinic Mart',
 					1,
-					'New Transactions inserted',
+					'All insertions was successful',
 					@@ROWCOUNT);
 		END TRY
 		BEGIN CATCH
-			--drop temporary tables
-			DROP TABLE IF EXISTS #tmp_groupby
-			DROP TABLE IF EXISTS #tmp_dim_cartesian
-
 			INSERT INTO Logs 
 			VALUES (GETDATE(),
-					'Clinic.factDailyAppointment',
+					'Clinic Mart',
 					0,
-					'ERROR : New Transactions may not inserted',
+					'ERROR : insertions FAILED',
 					@@ROWCOUNT);
 		END CATCH
 	END
 GO
+
+---------------------------------------------
+-- Clinic Mart : Testing
+---------------------------------------------
+--EXEC Clinic.FirstLoader;
+--SELECT * FROM Logs;
+--EXEC Clinic.Loader;
+--SELECT * FROM Logs;
