@@ -30,8 +30,7 @@ manager_phone_number varchar(15) null,
 agent_phone_number varchar(15) null,
 [address] varchar(200) null,
 additional_info varchar(200) null,
-active bit not null,
-active_description varchar(12) not null check(active_description in ('Active','Not Active'))
+active bit not null
 );
 
 create table Insurances(
@@ -84,9 +83,7 @@ illnessType_ID int not null,
 scientific_name varchar(100) not null,
 special_illness bit not null, --0 for not special / 1 for special illnesses
 killing_status smallint not null,
-killing_description varchar(100) not null,
 chronic bit not null,
-chronic_description varchar(15) not null check(chronic_description in ('chronic','Not chronic')),
 foreign key(illnessType_ID) references IllnessTypes(illnessType_ID)
 );
 
@@ -133,7 +130,6 @@ gender varchar(10) Check (gender in('Male','Female','Bi_sexual')),
 religion varchar(100) not null,
 nationality varchar(50) not null,
 marital_status bit not null,
-marital_status_description varchar(20) not null check(marital_status_description in ('single','married')), -- 0 for single / 1 for married
 phone_number varchar(15) null,
 postal_code varchar(12) null,
 [address] varchar(200) null,
@@ -172,7 +168,6 @@ postal_code varchar(12) null,
 religion varchar(100) not null,
 nationality varchar(50) not null,
 marital_status bit not null,
-marital_status_description varchar(20) not null check(marital_status_description in ('single','married')), -- 0 for single / 1 for married
 education_degree int not null,
 specialty_description varchar(100) null,
 graduation_date date not null,
@@ -226,7 +221,6 @@ hospitalization_checkout_ID int primary key,
 hospitalization_ID int not null,
 discharg_date date not null,
 payment_method bit not null, -- credit card / cash
-payment_method_description varchar(50) not null,
 credit_card_number varchar(16) null, 
 payer varchar(50) not null,
 payer_phone_number varchar(15) null,
@@ -268,8 +262,7 @@ manager_phone_number varchar(15) null,
 agent_phone_number varchar(15) null,
 [address] varchar(200) null,
 additional_info varchar(200) null,
-active bit not null,
-active_description varchar(200) not null
+active bit not null
 );
 
 create table Medicines(
@@ -286,7 +279,6 @@ sales_price int not null,
 stock int not null,
 [description] varchar(100) null,
 medicine_type smallint not null,--0:normal(with reduction with insurance) / 1:beauty(without reduction) / 2:special(free)
-medicine_type_description varchar(10) not null check(medicine_type_description in ('normal','beauty','special')),
 additional_info varchar(200) null,
 foreign key (medicineFactory_ID) references MedicineFactories(medicineFactory_ID)
 );
@@ -297,7 +289,6 @@ patient_ID int not null,
 order_date date not null,
 total_price int not null,
 payment_method bit not null, -- credit card / cash
-payment_method_description varchar(50) not null,
 credit_card_number varchar(16) null, 
 payer varchar(50) not null,
 payer_phone_number varchar(15) null,
@@ -328,7 +319,6 @@ price int not null,
 doctor_share int not null,
 insurance_share int not null,
 payment_method bit not null, -- credit card / cash
-payment_method_description varchar(50) not null,
 credit_card_number varchar(16) null, 
 payer varchar(50) not null,
 payer_phone_number varchar(15) null,
