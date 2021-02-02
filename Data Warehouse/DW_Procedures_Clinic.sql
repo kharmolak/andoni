@@ -1000,8 +1000,8 @@ CREATE OR ALTER PROCEDURE Clinic.factTransactionAppointment_Loader
 			DECLARE @end_date DATE;
 
 			SET @curr_date = (
-				SELECT MAX(TimeKey)
-				FROM HospitalDW.Clinic.factTransactionAppointment
+				SELECT CONVERT(DATE,CONVERT(VARCHAR,MAX(TimeKey)))
+				FROM HospitalDW.Clinic.factTransactionAppointment 
 			);
 			SET @curr_date = DATEADD(DAY,1,@curr_date);
 
