@@ -365,8 +365,9 @@ create table Clinic.factAccumulativeAppointment (
 )
 go
 
-create table factlessPatientIlnesses(
-	patient_ID				int,
+create table Clinic.factlessPatientIlnesses(
+	patient_code			int, --surrogate key
+	patient_ID				int, -- natural key
 	illness_ID					int,
 	[detection_date]		date,
 	severity					int, --[1-5]
