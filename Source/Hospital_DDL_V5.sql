@@ -321,7 +321,6 @@ create table Appointments(
 appointment_ID int primary key,
 patient_ID int not null,
 doctor_ID int not null, 
-surrogate_doctor_ID int not null,
 main_detected_illness int not null,
 appointment_number int not null,
 appointment_date date not null,
@@ -335,6 +334,5 @@ payer_phone_number varchar(15) null,
 additional_info varchar(200) null,
 foreign key(patient_ID) references Patients(patient_ID),
 foreign key(doctor_ID) references Doctors(doctor_ID),
-foreign key(surrogate_doctor_ID) references Doctors(doctor_ID),
 foreign key(main_detected_illness) references Illnesses(illness_ID)
 );
