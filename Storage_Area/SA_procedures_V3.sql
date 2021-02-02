@@ -81,7 +81,10 @@ begin
 	begin try
 		truncate table Illnesses;
 		insert into Illnesses
-		select illness_ID,illnessType_ID,[name],scientific_name,special_illness,killing_status,killing_description,chronic,case chronic
+		select illness_ID,illnessType_ID,[name],scientific_name,special_illness,killing_status,case killing_status
+																								when 0 then 'not killer'
+																								else 'killer'
+																								end as killing_description,chronic,case chronic
 																															when 0 then 'Not chronic'
 																															else 'chronic'
 																															end as chronic_description
@@ -138,7 +141,10 @@ begin
 	begin try
 		truncate table DoctorContracts;
 		insert into DoctorContracts
-		select doctorContract_ID,contract_start_date,contract_end_date,appointment_portion,salary,active,additional_info
+		select doctorContract_ID,contract_start_date,contract_end_date,appointment_portion,salary,active,case active
+																										when 0 then 'not active'
+																										else 'active'
+																										end as active_description,additional_info
 		from Hospital.dbo.DoctorContracts; 
 		insert into Logs values
 		(GETDATE(),'DoctorContracts',1,'DoctorContracts inserted',@@ROWCOUNT);
@@ -155,7 +161,10 @@ begin
 	begin try
 		truncate table MedicineFactories;
 		insert into MedicineFactories
-		select medicineFactory_ID,[name],license_code,manager,agent,phone_number,fax_number,website_address,manager_phone_number,agent_phone_number,[address],additional_info,active,active_description
+		select medicineFactory_ID,[name],license_code,manager,agent,phone_number,fax_number,website_address,manager_phone_number,agent_phone_number,[address],additional_info,active,case active
+																																														when 0 then 'not active'
+																																														else 'active'
+																																														end as active_description
 		from Hospital.dbo.MedicineFactories; 
 		insert into Logs values
 		(GETDATE(),'MedicineFactories',1,'MedicineFactories inserted',@@ROWCOUNT);
@@ -371,8 +380,8 @@ begin
 		exec InsuranceCompanies_insert;
 		exec Insurances_insert;
 		exec Departments_insert;
-		exec IlnessTypes_insert;
-		exec Ilnesses_insert;
+		exec IllnessTypes_insert;
+		exec Illnesses_insert;
 		exec Patients_insert;
 		exec Doctors_insert;
 		exec DoctorContracts_insert;
