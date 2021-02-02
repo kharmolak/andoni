@@ -797,12 +797,18 @@ GO
 -- Clinic Mart : Facts
 ---------------------------------------------
 -- Transactional Fact 
-CREATE OR ALTER PROCEDURE Clinic.factTransactionAppointment_FirstLoader @curr_date DATE
+CREATE OR ALTER PROCEDURE Clinic.factTransactionAppointment_FirstLoader
 	AS
 	BEGIN
 		BEGIN TRY
+			DECLARE @curr_date DATE;
 			DECLARE @curr_date_key INT;
 			DECLARE @end_date DATE;
+
+			SET @curr_date = (
+				SELECT MIN(appointment_date)
+				FROM HospitalSA.dbo.Appointments
+			);
 
 			SET @end_date = (
 				SELECT MAX(appointment_date)
@@ -1195,12 +1201,18 @@ CREATE OR ALTER PROCEDURE Clinic.factTransactionAppointment_Loader
 GO
 
 -- Periodic Snapshot Fact : Daily
-CREATE OR ALTER PROCEDURE Clinic.factDailyAppointment_FirstLoader @curr_date DATE
+CREATE OR ALTER PROCEDURE Clinic.factDailyAppointment_FirstLoader 
 	AS
 	BEGIN
 		BEGIN TRY
+			DECLARE @curr_date DATE;
 			DECLARE @curr_date_key INT;
 			DECLARE @end_date DATE;
+
+			SET @curr_date = (
+				SELECT MIN(appointment_date)
+				FROM HospitalSA.dbo.Appointments
+			);
 
 			SET @end_date = (
 				SELECT MAX(appointment_date)
@@ -1217,21 +1229,25 @@ CREATE OR ALTER PROCEDURE Clinic.factDailyAppointment_FirstLoader @curr_date DAT
 						WHERE FullDateAlternateKey = @curr_date
 					);
 
-					SELECT ISNULL(patient_ID,-1) AS patient_ID,
-						   ISNULL(doctor_ID,-1) AS doctor_ID,
-						   ISNULL(main_detected_illness,-1) AS main_detected_illness,
-						   price,
-						   doctor_share,
-						   insurance_share,
-						   payment_method,
-						   payment_method_description,
-						   credit_card_number,
-						   payer,
-						   payer_phone_number,
-						   additional_info 
-					INTO #tmp_today_appointments
-					FROM HospitalSA.dbo.Appointments
-					WHERE appointment_date = @curr_date
+					SELECT 	 [patient_code]
+							,[patient_ID]
+							,[insurance_ID]
+							,[insuranceCompany_ID]
+							,[doctor_code]
+							,[doctor_ID]
+							,[doctorContract_ID]
+							,[department_ID]
+							,[main_detected_illness]
+							,[illnessType_ID]
+							,[TimeKey]
+							,[paid_price]
+							,[real_price]
+							,[doctor_share]
+							,[insurance_share]
+							,[income]
+					INTO #tmp_today_transactions
+					FROM HospitalDW.Clinic.factTransactionAppointment
+					WHERE TimeKey = @curr_date_key
 					
 					SELECT p.patient_code,
 						   p.patient_ID,

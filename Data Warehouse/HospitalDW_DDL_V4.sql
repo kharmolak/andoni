@@ -335,7 +335,8 @@ go
 
 create table Clinic.factDailyAppointment (
 	insuranceCompany_ID		int,
-    doctor_ID							int,
+    doctor_code					int, -- surrogate key
+	doctor_ID							int, --natural key
 	doctorContract_ID			int,
 	department_ID					int,
 	main_detected_illness		int,
@@ -353,7 +354,8 @@ go
 
 create table Clinic.factMonthlyAppointment (
 	insuranceCompany_ID		int,
-    doctor_ID							int,
+    doctor_code					int, -- surrogate key
+	doctor_ID							int, --natural key
 	doctorContract_ID			int,
 	department_ID					int,
     TimeKey							int,
@@ -372,7 +374,8 @@ go
 
 create table Clinic.factAccumulativeAppointment (
     insuranceCompany_ID		int,
-    doctor_ID							int,
+     doctor_code					int, -- surrogate key
+	doctor_ID							int, --natural key
 	doctorContract_ID			int,
 	department_ID					int,
 	-------------------------------

@@ -27,12 +27,12 @@
 
 --create table Clinic.factDailyAppointment (
 --	insuranceCompany_ID		int,
--- doctor_ID							int,
+--  doctor_ID							int,
 --	doctorContract_ID			int,
 --	department_ID					int,
 --	main_detected_illness		int,
 --	illnessType_ID					int,
--- TimeKey							int,
+--  TimeKey							int,
 --	-------------------------------
 --	total_paied_price				int,
 --	total_real_price				int,
