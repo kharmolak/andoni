@@ -80,8 +80,8 @@ create table dimPatients(
     phone_number					varchar(25),--SCD1
 	death_date							date,--SCD1
 	death_reason						int,--SCD1
-	postal_code							varchar(20),--SCD1
-	[address]								varchar(200),--SCD1
+	postal_code							varchar(20),
+	[address]								varchar(200),
 	additional_info						varchar(200),
 	[start_date]							date,
     end_date								date,
@@ -104,9 +104,9 @@ create table Pharmacy.dimMedicineFactories(
 	website_address					varchar(200),
 	manager_phone_number	varchar(25),--SCD1
 	agent_phone_number			varchar(25),--SCD1
-	[address]								varchar(200),--SCD1
+	[address]								varchar(200),
 	additional_info						varchar(200),
-	active									bit,
+	active									bit,--SCD1
 	active_description				varchar(200)
 )
 go
@@ -298,38 +298,28 @@ create table Pharmacy.factAccumulativeMedicine(
 	total_insurance_credit				int,
 	total_factory_share					int,
 	total_income							int,
-    number_of_patients_bought   int,
-	max_bought_per_month			int,
-	min_bought_per_month			int,
-	avg_bought_per_month			int
+    number_of_patients_bought   int
 )
 go
 -------------------------------------------------------------
 -------------------------------------------------------------
 create table Clinic.factTransactionAppointment (
-    patient_code								int,-- surrogate key
-    patient_ID									int,--natural key
-	insurance_ID								int, 
-    insuranceCompany_ID					int,
-    doctor_code								int, -- surrogate key
-	doctor_ID										int, --natural key
-	doctorContract_ID						int,
-	department_ID								int,
-	main_detected_illness					int,
-	illnessType_ID								int,
-    TimeKey										int,
-	-------------------------------------------
-    paid_price									int,
-	real_price										int,
-	insurance_credit							int,
-	doctor_share								int,
-	income											int,
-	payment_method						bit, -- credit card / cash
-	payment_method_description		varchar(60),
-	credit_card_number						varchar(26),
-	payer											varchar(60),
-	payer_phone_number					varchar(25),
-	additional_info								varchar(200),
+    patient_code					int,-- surrogate key
+    patient_ID						int,--natural key
+	insurance_ID					int, 
+    insuranceCompany_ID		int,
+    doctor_ID							int,
+	doctorContract_ID			int,
+	department_ID					int,
+	main_detected_illness		int,
+	illnessType_ID					int,
+    TimeKey							int,
+	-------------------------------
+    paid_price						int,
+	real_price							int,
+	insurance_credit				int,
+	doctor_share					int,
+	income								int
 )
 go
 
