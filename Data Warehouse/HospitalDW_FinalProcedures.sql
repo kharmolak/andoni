@@ -2957,11 +2957,11 @@ AS
 
 			INSERT INTO Clinic.factlessPatientIlnesses
 				SELECT 	[patient_code]
-						,[patient_ID]
+						,i.[patient_ID]
 						,[illness_ID]
 						,[detection_date]
 						,[severity]
-						,[additional_info]
+						,i.[additional_info]
 				FROM HospitalSA.dbo.PatientIllnesses as i inner join dbo.dimPatients as p on(i.patient_ID=p.patient_ID and p.current_flag=1)
 		---------------------------------------------------
 			INSERT INTO [dbo].[Logs]
@@ -3494,11 +3494,11 @@ AS
 
 			INSERT INTO Clinic.factlessPatientIlnesses
 				SELECT 	[patient_code]
-						,[patient_ID]
+						,i.[patient_ID]
 						,[illness_ID]
 						,[detection_date]
 						,[severity]
-						,[additional_info]
+						,i.[additional_info]
 				FROM HospitalSA.dbo.PatientIllnesses as i inner join dbo.dimPatients as p on(i.patient_ID=p.patient_ID and p.current_flag=1)
 		---------------------------------------------------
 			INSERT INTO [dbo].[Logs]
